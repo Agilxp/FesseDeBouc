@@ -1,3 +1,3 @@
 package com.agilxp.fessedebouc.model
 
-data class UserSession(val state: String, val token: String)
+data class UserSession(val state: String, val accessToken: String)

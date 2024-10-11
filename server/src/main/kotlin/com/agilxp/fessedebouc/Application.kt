@@ -7,6 +7,7 @@ import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -17,7 +18,6 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
-import io.ktor.websocket.*
 
 fun main() {
     embeddedServer(Netty, port = SERVER_PORT, host = "0.0.0.0", module = Application::module)
@@ -33,7 +33,9 @@ val applicationHttpClient = HttpClient(CIO) {
 
 fun Application.module(httpClient: HttpClient = applicationHttpClient) {
     install(Sessions) {
-        cookie<UserSession>("user_session")
+        cookie<UserSession>("user_session") {
+            cookie.maxAgeInSeconds = 1800
+        }
     }
     val redirects = mutableMapOf<String, String>()
     install(Authentication) {
@@ -83,6 +85,10 @@ fun Application.module(httpClient: HttpClient = applicationHttpClient) {
         get("/") {
             call.respondRedirect("/login")
         }
+        get("/logout") {
+            call.sessions.clear<UserSession>()
+            call.respondRedirect("/login")
+        }
         get("/home") {
             val userSession: UserSession? = getSession(call)
             if (userSession != null) {
@@ -105,7 +111,7 @@ private suspend fun getPersonalGreeting(
     userSession: UserSession
 ): UserInfo = httpClient.get("https://www.googleapis.com/oauth2/v2/userinfo") {
     headers {
-        append(HttpHeaders.Authorization, "Bearer ${userSession.token}")
+        append(HttpHeaders.Authorization, "Bearer ${userSession.accessToken}")
     }
 }.body()
 
@@ -115,12 +121,23 @@ private suspend fun getSession(
     val userSession: UserSession? = call.sessions.get()
     //if there is no session, redirect to log in
     if (userSession == null) {
-        val redirectUrl = URLBuilder("http://0.0.0.0:8080/login").run {
-            parameters.append("redirectUrl", call.request.uri)
-            build()
-        }
-        call.respondRedirect(redirectUrl)
+        redirectToLogin(call)
         return null
+    } else {
+        val response: HttpResponse = applicationHttpClient.get("https://www.googleapis.com/oauth2/v2/tokeninfo?access_token=${userSession.accessToken}")
+        if (response.status != HttpStatusCode.OK) {
+            call.sessions.clear<UserSession>()
+            redirectToLogin(call)
+            return null
+        }
     }
     return userSession
+}
+
+private suspend fun redirectToLogin(call: ApplicationCall) {
+    val redirectUrl = URLBuilder("http://0.0.0.0:8080/login").run {
+        parameters.append("redirectUrl", call.request.uri)
+        build()
+    }
+    call.respondRedirect(redirectUrl)
 }
