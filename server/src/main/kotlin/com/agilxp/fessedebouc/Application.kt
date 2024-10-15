@@ -1,28 +1,23 @@
 package com.agilxp.fessedebouc
 
-import com.agilxp.fessedebouc.model.UserInfo
-import com.agilxp.fessedebouc.model.UserSession
+import com.agilxp.fessedebouc.config.configureAuth
+import com.agilxp.fessedebouc.config.configureDatabases
+import com.agilxp.fessedebouc.config.configureRouting
+import com.agilxp.fessedebouc.model.JWTConfig
+import com.agilxp.fessedebouc.model.OAuthConfig
+import com.agilxp.fessedebouc.repository.PostgresGroupRepository
+import com.agilxp.fessedebouc.repository.PostgresMessageRepository
+import com.agilxp.fessedebouc.repository.PostgresUserRepository
 import io.ktor.client.*
-import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
-import io.ktor.server.auth.*
-import io.ktor.server.engine.*
+import io.ktor.server.config.ApplicationConfig
 import io.ktor.server.netty.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
-import io.ktor.server.sessions.*
+import java.time.Clock
 
-fun main() {
-    embeddedServer(Netty, port = SERVER_PORT, host = "0.0.0.0", module = Application::module)
-        .start(wait = true)
-}
+fun main(args: Array<String>): Unit = EngineMain.main(args)
 
 val applicationHttpClient = HttpClient(CIO) {
     install(ContentNegotiation) {
@@ -32,112 +27,35 @@ val applicationHttpClient = HttpClient(CIO) {
 
 
 fun Application.module(httpClient: HttpClient = applicationHttpClient) {
-    install(Sessions) {
-        cookie<UserSession>("user_session") {
-            cookie.maxAgeInSeconds = 1800
-        }
-    }
-    val redirects = mutableMapOf<String, String>()
-    install(Authentication) {
-        oauth("auth-oauth-google") {
-            urlProvider = { "http://localhost:8080/callback" }
-            providerLookup = {
-                OAuthServerSettings.OAuth2ServerSettings(
-                    name = "google",
-                    authorizeUrl = "https://accounts.google.com/o/oauth2/auth",
-                    accessTokenUrl = "https://accounts.google.com/o/oauth2/token",
-                    requestMethod = HttpMethod.Post,
-                    clientId = System.getenv("GOOGLE_CLIENT_ID"),
-                    clientSecret = System.getenv("GOOGLE_CLIENT_SECRET"),
-                    defaultScopes = listOf("https://www.googleapis.com/auth/userinfo.profile"),
-                    onStateCreated = { call, state ->
-                        //saves new state with redirect url value
-                        call.request.queryParameters["redirectUrl"]?.let {
-                            redirects[state] = it
-                        }
-                    }
-                )
-            }
-            client = httpClient
-        }
-    }
-    routing {
-        authenticate("auth-oauth-google") {
-            get("/login") {
-                // Redirects to 'authorizeUrl' automatically
-                // call.respondRedirect("/auth/oauth/google")
-            }
-            get("/callback") {
-                val currentPrincipal: OAuthAccessTokenResponse.OAuth2? = call.principal()
-                // redirects home if the url is not found before authorization
-                currentPrincipal?.let { principal ->
-                    principal.state?.let { state ->
-                        call.sessions.set(UserSession(state, principal.accessToken))
-                        redirects[state]?.let { redirect ->
-                            call.respondRedirect(redirect)
-                            return@get
-                        }
-                    }
-                }
-                call.respondRedirect("/home")
-            }
-        }
-        get("/") {
-            call.respondRedirect("/login")
-        }
-        get("/logout") {
-            call.sessions.clear<UserSession>()
-            call.respondRedirect("/login")
-        }
-        get("/home") {
-            val userSession: UserSession? = getSession(call)
-            if (userSession != null) {
-                val userInfo: UserInfo = getPersonalGreeting(httpClient, userSession)
-                call.respondText("Hello, ${userInfo.name}! Welcome home!")
-            }
-        }
-        get("/{path}") {
-            val userSession: UserSession? = getSession(call)
-            if (userSession != null) {
-                val userInfo: UserInfo = getPersonalGreeting(httpClient, userSession)
-                call.respondText("Hello, ${userInfo.name}!")
-            }
-        }
-    }
+    val jwtConfig = environment.config.config("ktor.auth.jwt").jwtConfig()
+    val oauthConfig = environment.config.config("ktor.auth.oauth.google").oauthConfig()
+    val groupRepository = PostgresGroupRepository()
+    val userRepository = PostgresUserRepository()
+    val messageRepository = PostgresMessageRepository()
+    configureAuth(clock = Clock.systemUTC(), jwtConfig = jwtConfig, oauthConfig = oauthConfig)
+    configureDatabases()
+    configureRouting(groupRepository, userRepository, messageRepository, jwtConfig)
 }
 
-private suspend fun getPersonalGreeting(
-    httpClient: HttpClient,
-    userSession: UserSession
-): UserInfo = httpClient.get("https://www.googleapis.com/oauth2/v2/userinfo") {
-    headers {
-        append(HttpHeaders.Authorization, "Bearer ${userSession.accessToken}")
-    }
-}.body()
+fun ApplicationConfig.jwtConfig(): JWTConfig =
+    JWTConfig(
+        name = property("name").getString(),
+        realm = property("realm").getString(),
+        secret = property("secret").getString(),
+        audience = property("audience").getString(),
+        issuer = property("issuer").getString(),
+        expirationSeconds = property("expirationSeconds").getString().toLong()
+    )
 
-private suspend fun getSession(
-    call: ApplicationCall
-): UserSession? {
-    val userSession: UserSession? = call.sessions.get()
-    //if there is no session, redirect to log in
-    if (userSession == null) {
-        redirectToLogin(call)
-        return null
-    } else {
-        val response: HttpResponse = applicationHttpClient.get("https://www.googleapis.com/oauth2/v2/tokeninfo?access_token=${userSession.accessToken}")
-        if (response.status != HttpStatusCode.OK) {
-            call.sessions.clear<UserSession>()
-            redirectToLogin(call)
-            return null
-        }
-    }
-    return userSession
-}
 
-private suspend fun redirectToLogin(call: ApplicationCall) {
-    val redirectUrl = URLBuilder("http://0.0.0.0:8080/login").run {
-        parameters.append("redirectUrl", call.request.uri)
-        build()
-    }
-    call.respondRedirect(redirectUrl)
-}
+fun ApplicationConfig.oauthConfig(): OAuthConfig =
+    OAuthConfig(
+        name = property("name").getString(),
+        clientId = property("clientId").getString(),
+        clientSecret = property("clientSecret").getString(),
+        accessTokenUrl = property("accessTokenUrl").getString(),
+        authorizeUrl = property("authorizeUrl").getString(),
+        redirectUrl = property("redirectUrl").getString(),
+        userInfoUrl = property("userInfoUrl").getString(),
+        defaultScopes = property("defaultScopes").getList()
+    )
