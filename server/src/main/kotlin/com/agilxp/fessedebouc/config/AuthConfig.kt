@@ -1,7 +1,5 @@
 package com.agilxp.fessedebouc.config
 
-import com.agilxp.fessedebouc.applicationHttpClient
-import com.agilxp.fessedebouc.db.User
 import com.agilxp.fessedebouc.model.JWTConfig
 import com.agilxp.fessedebouc.model.OAuthConfig
 import com.agilxp.fessedebouc.model.UserInfo
@@ -12,9 +10,12 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.client.*
 import io.ktor.client.call.body
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.JWTPrincipal
@@ -24,6 +25,11 @@ import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
 import java.time.Clock
 
+val applicationHttpClient = HttpClient(CIO) {
+    install(ContentNegotiation) {
+        json()
+    }
+}
 
 fun Application.configureAuth(
     httpClient: HttpClient = applicationHttpClient,

@@ -10,10 +10,16 @@ data class JWTConfig(
     val secret: String,
     val audience: String,
     val issuer: String,
-    val expirationSeconds: Long
 )
 
-fun JWTConfig.createToken(clock: Clock, accessToken: String, expirationSeconds: Long, userId: Int, userEmail: String, googleId: String): String =
+fun JWTConfig.createToken(
+    clock: Clock,
+    accessToken: String,
+    expirationSeconds: Long,
+    userId: Int,
+    userEmail: String,
+    googleId: String
+): String =
     JWT.create()
         .withAudience(this.audience)
         .withIssuer(this.issuer)

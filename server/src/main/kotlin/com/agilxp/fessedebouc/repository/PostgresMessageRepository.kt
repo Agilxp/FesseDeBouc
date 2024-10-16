@@ -13,7 +13,7 @@ class PostgresMessageRepository: MessageRepository {
         MessageDAO.find { (Messages.group eq groupId) }.map { messageDAOToModel(it) }
     }
 
-    override suspend fun addMessageForGroup(message: String, userId: Int, groupId: Int): Unit = suspendTransaction {
+    override suspend fun addMessageToGroup(message: String, userId: Int, groupId: Int): Unit = suspendTransaction {
         MessageDAO.new {
             content = message
             sender = UserDAO[userId]

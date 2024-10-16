@@ -1,10 +1,10 @@
 package com.agilxp.fessedebouc.config
 
-import com.agilxp.fessedebouc.db.GroupDAO
-import com.agilxp.fessedebouc.db.Message
 import com.agilxp.fessedebouc.db.User
+import com.agilxp.fessedebouc.model.EventDTO
 import com.agilxp.fessedebouc.model.JWTConfig
 import com.agilxp.fessedebouc.model.UserSession
+import com.agilxp.fessedebouc.repository.EventRepository
 import com.agilxp.fessedebouc.repository.GroupRepository
 import com.agilxp.fessedebouc.repository.MessageRepository
 import com.agilxp.fessedebouc.repository.UserRepository
@@ -16,6 +16,7 @@ import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.principal
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.get
@@ -27,68 +28,86 @@ fun Application.configureRouting(
     groupRepository: GroupRepository,
     userRepository: UserRepository,
     messageRepository: MessageRepository,
+    eventRepository: EventRepository,
     jwtConfig: JWTConfig,
 ) {
     install(ContentNegotiation) {
         json()
+    }
+    install(StatusPages) {
+        exception<AuthenticationException> { call, cause ->
+            call.respond(HttpStatusCode.Unauthorized, cause.message)
+        }
+        exception<BadRequestException> { call, cause ->
+            call.respond(HttpStatusCode.BadRequest, cause.message)
+        }
     }
     routing {
         authenticate("auth-session") {
             authenticate(jwtConfig.name) {
                 route("/messages") {
                     get("/{groupId}") {
-                        try {
-                            val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
-                            val groupId = call.parameters["groupId"]?.toIntOrNull()
-                            if (groupId != null && isUserInGroup(user, groupId, groupRepository)) {
-                                val messages = messageRepository.getMessagesForGroup(groupId)
-                                call.respond(messages)
-                            } else {
-                                throw BadRequestException("Group id missing")
-                            }
-                        } catch (e: AuthenticationException) {
-                            call.respond(status = HttpStatusCode.Unauthorized, message = e.message)
-                        } catch (e: BadRequestException) {
-                            call.respond(status = HttpStatusCode.BadRequest, message = e.message)
+                        val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
+                        val groupId = call.parameters["groupId"]?.toIntOrNull()
+                        if (groupId != null && isUserInGroup(user, groupId, groupRepository)) {
+                            val messages = messageRepository.getMessagesForGroup(groupId)
+                            call.respond(messages)
+                        } else {
+                            throw BadRequestException("Group id missing")
                         }
                     }
                     post("/{groupId}") {
-                        try {
-                            val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
-                            val groupId = call.parameters["groupId"]?.toIntOrNull()
-                            if (groupId != null && isUserInGroup(user, groupId, groupRepository)) {
-                                val message = call.receive<String>()
-                                if (message.isEmpty()) {
-                                    throw BadRequestException("Message cannot be empty")
-                                }
-                                println("Message: $message")
-                                messageRepository.addMessageForGroup(message, user.id, groupId)
-                                call.respond(HttpStatusCode.OK)
-                            } else {
-                                throw BadRequestException("Group id missing")
+                        val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
+                        val groupId = call.parameters["groupId"]?.toIntOrNull()
+                        if (groupId != null && isUserInGroup(user, groupId, groupRepository)) {
+                            val message = call.receive<String>()
+                            if (message.isEmpty()) {
+                                throw BadRequestException("Message cannot be empty")
                             }
-                        } catch (e: AuthenticationException) {
-                            call.respond(status = HttpStatusCode.Unauthorized, message = e.message)
-                        } catch (e: BadRequestException) {
-                            call.respond(status = HttpStatusCode.BadRequest, message = e.message)
+                            println("Message: $message")
+                            messageRepository.addMessageToGroup(message, user.id, groupId)
+                            call.respond(HttpStatusCode.OK)
+                        } else {
+                            throw BadRequestException("Group id missing")
                         }
                     }
                 }
                 route("/users") {
                     get("/{groupId}") {
-                        try {
-                            val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
-                            val groupId = call.parameters["groupId"]?.toIntOrNull()
-                            if (groupId != null && isUserInGroup(user, groupId, groupRepository)) {
-                                val users = groupRepository.getGroupById(groupId)?.users ?: emptyList()
-                                call.respond(users)
-                            } else {
-                                throw BadRequestException("Group id missing")
-                            }
-                        } catch (e: AuthenticationException) {
-                            call.respond(status = HttpStatusCode.Unauthorized, message = e.message)
-                        } catch (e: BadRequestException) {
-                            call.respond(status = HttpStatusCode.BadRequest, message = e.message)
+                        val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
+                        val groupId = call.parameters["groupId"]?.toIntOrNull()
+                        if (groupId != null && isUserInGroup(user, groupId, groupRepository)) {
+                            val users = groupRepository.getGroupById(groupId)?.users ?: emptyList()
+                            call.respond(users)
+                        } else {
+                            throw BadRequestException("Group id missing")
+                        }
+                    }
+                }
+                route("/events") {
+                    get("/{groupId}") {
+                        val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
+                        val groupId = call.parameters["groupId"]?.toIntOrNull()
+                        if (groupId != null && isUserInGroup(user, groupId, groupRepository)) {
+                            val events = eventRepository.getEventsForGroup(groupId)
+                            call.respond(events)
+                        } else {
+                            throw BadRequestException("Group id missing")
+                        }
+                    }
+                    post("/{groupId}") {
+                        val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
+                        val groupId = call.parameters["groupId"]?.toIntOrNull()
+                        if (groupId != null && isUserInGroup(user, groupId, groupRepository)) {
+                            val event = call.receive<EventDTO>()
+                            eventRepository.addEventToGroup(
+                                event,
+                                user.id,
+                                groupId
+                            )
+                            call.respond(HttpStatusCode.OK)
+                        } else {
+                            throw BadRequestException("Group id missing")
                         }
                     }
                 }

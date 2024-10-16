@@ -5,13 +5,10 @@ import com.agilxp.fessedebouc.config.configureDatabases
 import com.agilxp.fessedebouc.config.configureRouting
 import com.agilxp.fessedebouc.model.JWTConfig
 import com.agilxp.fessedebouc.model.OAuthConfig
+import com.agilxp.fessedebouc.repository.PostgresEventRepository
 import com.agilxp.fessedebouc.repository.PostgresGroupRepository
 import com.agilxp.fessedebouc.repository.PostgresMessageRepository
 import com.agilxp.fessedebouc.repository.PostgresUserRepository
-import io.ktor.client.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.config.ApplicationConfig
 import io.ktor.server.netty.*
@@ -19,22 +16,16 @@ import java.time.Clock
 
 fun main(args: Array<String>): Unit = EngineMain.main(args)
 
-val applicationHttpClient = HttpClient(CIO) {
-    install(ContentNegotiation) {
-        json()
-    }
-}
-
-
-fun Application.module(httpClient: HttpClient = applicationHttpClient) {
+fun Application.module() {
     val jwtConfig = environment.config.config("ktor.auth.jwt").jwtConfig()
     val oauthConfig = environment.config.config("ktor.auth.oauth.google").oauthConfig()
     val groupRepository = PostgresGroupRepository()
     val userRepository = PostgresUserRepository()
     val messageRepository = PostgresMessageRepository()
+    val eventRepository = PostgresEventRepository()
     configureAuth(clock = Clock.systemUTC(), jwtConfig = jwtConfig, oauthConfig = oauthConfig, userRepository = userRepository)
     configureDatabases()
-    configureRouting(groupRepository, userRepository, messageRepository, jwtConfig)
+    configureRouting(groupRepository, userRepository, messageRepository, eventRepository, jwtConfig)
 }
 
 fun ApplicationConfig.jwtConfig(): JWTConfig =
@@ -44,7 +35,6 @@ fun ApplicationConfig.jwtConfig(): JWTConfig =
         secret = property("secret").getString(),
         audience = property("audience").getString(),
         issuer = property("issuer").getString(),
-        expirationSeconds = property("expirationSeconds").getString().toLong()
     )
 
 
