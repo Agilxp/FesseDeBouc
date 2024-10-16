@@ -9,5 +9,5 @@ data class EventDTO(
     val description: String,
     val start: SerializableOffsetDateTime,
     val end: SerializableOffsetDateTime,
-    val location: String,
+    val location: String
 )

@@ -6,6 +6,7 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.kotlin.datetime.timestampWithTimeZone
 
 object Events : IntIdTable("events") {
@@ -18,6 +19,11 @@ object Events : IntIdTable("events") {
     val owner = reference("user_id", Users)
 }
 
+object EventParticipants : IntIdTable("event_participants") {
+    val eventId = reference("event_id", Events, onDelete = ReferenceOption.CASCADE)
+    val userId = reference("user_id", Users, onDelete = ReferenceOption.CASCADE)
+}
+
 class EventDAO(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<EventDAO>(Events)
 
@@ -28,6 +34,7 @@ class EventDAO(id: EntityID<Int>) : IntEntity(id) {
     var location by Events.location
     var group by GroupDAO referencedOn Events.group
     var owner by UserDAO referencedOn Events.owner
+    var participants by UserDAO via EventParticipants
 }
 
 @Serializable
@@ -39,7 +46,8 @@ data class Event(
     val end: SerializableOffsetDateTime,
     val location: String,
     val group: Group,
-    val owner: User
+    val owner: User,
+    val participants: List<User>
 )
 
 fun eventDAOToModel(eventDAO: EventDAO) = Event(
@@ -50,5 +58,6 @@ fun eventDAOToModel(eventDAO: EventDAO) = Event(
     end = eventDAO.end,
     location = eventDAO.location,
     group = groupDAOToModel(eventDAO.group),
-    owner = userDAOToModel(eventDAO.owner)
+    owner = userDAOToModel(eventDAO.owner),
+    participants = eventDAO.participants.map { userDAOToModel(it) }
 )

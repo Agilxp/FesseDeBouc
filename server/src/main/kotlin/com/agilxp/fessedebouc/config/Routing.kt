@@ -1,7 +1,9 @@
 package com.agilxp.fessedebouc.config
 
+import com.agilxp.fessedebouc.db.Group
 import com.agilxp.fessedebouc.db.User
 import com.agilxp.fessedebouc.model.EventDTO
+import com.agilxp.fessedebouc.model.GroupDTO
 import com.agilxp.fessedebouc.model.JWTConfig
 import com.agilxp.fessedebouc.model.UserSession
 import com.agilxp.fessedebouc.repository.EventRepository
@@ -45,6 +47,15 @@ fun Application.configureRouting(
     routing {
         authenticate("auth-session") {
             authenticate(jwtConfig.name) {
+                route("/groups") {
+                    post {
+                        val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
+                        val groupToCreate = call.receive<GroupDTO>()
+                        val createdGroup = groupRepository.createGroup(groupToCreate)
+                        groupRepository.addUserToGroup(createdGroup, user, true)
+                        call.respond(createdGroup)
+                    }
+                }
                 route("/messages") {
                     get("/{groupId}") {
                         val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
@@ -106,8 +117,31 @@ fun Application.configureRouting(
                                 groupId
                             )
                             call.respond(HttpStatusCode.OK)
+                            // TODO send email to everyone in the group
                         } else {
                             throw BadRequestException("Group id missing")
+                        }
+                    }
+                }
+                route("/accept") {
+                    route("/event") {
+                        get("/{eventId}") {
+                            val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
+                            val eventId = call.parameters["eventId"]?.toIntOrNull()
+                            if (eventId != null) {
+                                val event = eventRepository.getEventById(eventId)
+                                if (event == null) {
+                                    throw BadRequestException("Invalid event id")
+                                }
+                                if (isUserInGroup(user, event.group.id, groupRepository)) {
+                                    eventRepository.acceptEvent(event, user)
+                                } else {
+                                    throw BadRequestException("User is not associated with the group for this event")
+                                }
+                                call.respond(HttpStatusCode.OK)
+                            } else {
+                                throw BadRequestException("Event id missing")
+                            }
                         }
                     }
                 }

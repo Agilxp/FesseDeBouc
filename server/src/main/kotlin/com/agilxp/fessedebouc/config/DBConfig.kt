@@ -1,5 +1,6 @@
 package com.agilxp.fessedebouc.config
 
+import com.agilxp.fessedebouc.db.EventParticipants
 import com.agilxp.fessedebouc.db.Events
 import com.agilxp.fessedebouc.db.Groups
 import com.agilxp.fessedebouc.db.Messages
@@ -26,6 +27,7 @@ fun Application.configureDatabases() {
         SchemaUtils.createMissingTablesAndColumns(UserGroups)
         SchemaUtils.createMissingTablesAndColumns(Messages)
         SchemaUtils.createMissingTablesAndColumns(Events)
+        SchemaUtils.createMissingTablesAndColumns(EventParticipants)
     }
 }
 
