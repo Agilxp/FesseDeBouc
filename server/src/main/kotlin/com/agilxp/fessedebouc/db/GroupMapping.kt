@@ -14,7 +14,6 @@ import kotlin.reflect.KProperty
 object Groups : IntIdTable("groups") {
     val name = varchar("name", 255)
     val description = varchar("description", 255)
-    val public = bool("public")
 }
 
 object UserGroups : IntIdTable("user_groups") {
@@ -28,7 +27,6 @@ class GroupDAO(id: EntityID<Int>) : IntEntity(id) {
 
     var name by Groups.name
     var description by Groups.description
-    var public by Groups.public
 
     val users by UserDAO via UserGroups
     val admins get() = mapAdmin(this, GroupDAO::users)
@@ -57,7 +55,6 @@ data class Group(
     val id: Int,
     val name: String,
     val description: String,
-    val public: Boolean,
     val users: List<User>,
     val admins: List<User>
 )
@@ -66,7 +63,6 @@ fun groupDAOToModel(dao: GroupDAO) = Group(
     dao.id.value,
     dao.name,
     dao.description,
-    dao.public,
     dao.users.map { userDAOToModel(it) },
     dao.admins.map { userDAOToModel(it) }
 )

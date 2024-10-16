@@ -32,7 +32,7 @@ fun Application.module(httpClient: HttpClient = applicationHttpClient) {
     val groupRepository = PostgresGroupRepository()
     val userRepository = PostgresUserRepository()
     val messageRepository = PostgresMessageRepository()
-    configureAuth(clock = Clock.systemUTC(), jwtConfig = jwtConfig, oauthConfig = oauthConfig)
+    configureAuth(clock = Clock.systemUTC(), jwtConfig = jwtConfig, oauthConfig = oauthConfig, userRepository = userRepository)
     configureDatabases()
     configureRouting(groupRepository, userRepository, messageRepository, jwtConfig)
 }

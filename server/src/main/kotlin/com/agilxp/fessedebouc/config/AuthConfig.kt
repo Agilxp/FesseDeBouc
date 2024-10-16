@@ -1,11 +1,13 @@
 package com.agilxp.fessedebouc.config
 
 import com.agilxp.fessedebouc.applicationHttpClient
+import com.agilxp.fessedebouc.db.User
 import com.agilxp.fessedebouc.model.JWTConfig
 import com.agilxp.fessedebouc.model.OAuthConfig
 import com.agilxp.fessedebouc.model.UserInfo
 import com.agilxp.fessedebouc.model.UserSession
 import com.agilxp.fessedebouc.model.createToken
+import com.agilxp.fessedebouc.repository.UserRepository
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.client.*
@@ -27,7 +29,8 @@ fun Application.configureAuth(
     httpClient: HttpClient = applicationHttpClient,
     clock: Clock,
     jwtConfig: JWTConfig,
-    oauthConfig: OAuthConfig
+    oauthConfig: OAuthConfig,
+    userRepository: UserRepository,
 ) {
     install(Sessions) {
         cookie<UserSession>("user_session") {
@@ -91,11 +94,22 @@ fun Application.configureAuth(
             }
             get("/callback") {
                 val currentPrincipal: OAuthAccessTokenResponse.OAuth2? = call.principal()
-                // redirects home if the url is not found before authorization
                 currentPrincipal?.let { principal ->
                     principal.state?.let { state ->
-                        call.sessions.set(UserSession(state, principal.accessToken))
-                        val jwtToken = jwtConfig.createToken(clock, principal.accessToken, principal.expiresIn)
+                        val userInfo = getUserInfo(principal.accessToken, oauthConfig, httpClient)
+                        var user = userRepository.getUserByGoogleId(userInfo.id)
+                        if (user == null) {
+                            user = userRepository.createUser(userInfo.name, userInfo.email, userInfo.id)
+                        }
+                        call.sessions.set(UserSession(state, principal.accessToken, user.id, userInfo.email, userInfo.id))
+                        val jwtToken = jwtConfig.createToken(
+                            clock,
+                            principal.accessToken,
+                            principal.expiresIn,
+                            user.id,
+                            userInfo.email,
+                            userInfo.id
+                        )
                         call.respondText(jwtToken, contentType = ContentType.Text.Plain)
                     }
                 }
