@@ -29,7 +29,7 @@ class PostgresEventRepository : EventRepository {
         }
     }
 
-    override suspend fun addEventToGroup(eventDTO: EventDTO, userId: Int, groupId: Int): Unit = suspendTransaction {
+    override suspend fun createEvent(eventDTO: EventDTO, userId: Int, groupId: Int): Unit = suspendTransaction {
         EventDAO.new {
             name = eventDTO.name
             description = eventDTO.description

@@ -23,11 +23,20 @@ import io.ktor.server.auth.jwt.jwt
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
+import kotlinx.serialization.json.Json
 import java.time.Clock
 
 val applicationHttpClient = HttpClient(CIO) {
     install(ContentNegotiation) {
-        json()
+        json(json = Json {
+            encodeDefaults = true
+            isLenient = true
+            allowSpecialFloatingPointValues = true
+            allowStructuredMapKeys = true
+            prettyPrint = false
+            useArrayPolymorphism = false
+            ignoreUnknownKeys = true
+        })
     }
 }
 
@@ -107,7 +116,15 @@ fun Application.configureAuth(
                         if (user == null) {
                             user = userRepository.createUser(userInfo.name, userInfo.email, userInfo.id)
                         }
-                        call.sessions.set(UserSession(state, principal.accessToken, user.id, userInfo.email, userInfo.id))
+                        call.sessions.set(
+                            UserSession(
+                                state,
+                                principal.accessToken,
+                                user.id,
+                                userInfo.email,
+                                userInfo.id
+                            )
+                        )
                         val jwtToken = jwtConfig.createToken(
                             clock,
                             principal.accessToken,

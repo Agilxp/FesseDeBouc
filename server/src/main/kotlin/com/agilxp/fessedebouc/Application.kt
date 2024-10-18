@@ -5,10 +5,7 @@ import com.agilxp.fessedebouc.config.configureDatabases
 import com.agilxp.fessedebouc.config.configureRouting
 import com.agilxp.fessedebouc.model.JWTConfig
 import com.agilxp.fessedebouc.model.OAuthConfig
-import com.agilxp.fessedebouc.repository.PostgresEventRepository
-import com.agilxp.fessedebouc.repository.PostgresGroupRepository
-import com.agilxp.fessedebouc.repository.PostgresMessageRepository
-import com.agilxp.fessedebouc.repository.PostgresUserRepository
+import com.agilxp.fessedebouc.repository.*
 import io.ktor.server.application.*
 import io.ktor.server.config.ApplicationConfig
 import io.ktor.server.netty.*
@@ -23,9 +20,10 @@ fun Application.module() {
     val userRepository = PostgresUserRepository()
     val messageRepository = PostgresMessageRepository()
     val eventRepository = PostgresEventRepository()
+    val joinGroupRequestRepository = PostgresJoinGroupRequestRepository()
     configureAuth(clock = Clock.systemUTC(), jwtConfig = jwtConfig, oauthConfig = oauthConfig, userRepository = userRepository)
     configureDatabases()
-    configureRouting(groupRepository, userRepository, messageRepository, eventRepository, jwtConfig)
+    configureRouting(groupRepository, userRepository, messageRepository, eventRepository, joinGroupRequestRepository, jwtConfig)
 }
 
 fun ApplicationConfig.jwtConfig(): JWTConfig =

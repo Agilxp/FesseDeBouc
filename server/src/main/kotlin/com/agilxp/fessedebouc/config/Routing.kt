@@ -1,15 +1,11 @@
 package com.agilxp.fessedebouc.config
 
-import com.agilxp.fessedebouc.db.Group
+import com.agilxp.fessedebouc.db.RequestStatus
+import com.agilxp.fessedebouc.db.RequestType
 import com.agilxp.fessedebouc.db.User
-import com.agilxp.fessedebouc.model.EventDTO
-import com.agilxp.fessedebouc.model.GroupDTO
-import com.agilxp.fessedebouc.model.JWTConfig
-import com.agilxp.fessedebouc.model.UserSession
-import com.agilxp.fessedebouc.repository.EventRepository
-import com.agilxp.fessedebouc.repository.GroupRepository
-import com.agilxp.fessedebouc.repository.MessageRepository
-import com.agilxp.fessedebouc.repository.UserRepository
+import com.agilxp.fessedebouc.model.*
+import com.agilxp.fessedebouc.repository.*
+import com.agilxp.fessedebouc.util.EmailUtils
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.*
@@ -31,6 +27,7 @@ fun Application.configureRouting(
     userRepository: UserRepository,
     messageRepository: MessageRepository,
     eventRepository: EventRepository,
+    joinGroupRequestRepository: JoinGroupRequestRepository,
     jwtConfig: JWTConfig,
 ) {
     install(ContentNegotiation) {
@@ -54,6 +51,51 @@ fun Application.configureRouting(
                         val createdGroup = groupRepository.createGroup(groupToCreate)
                         groupRepository.addUserToGroup(createdGroup, user, true)
                         call.respond(createdGroup)
+                    }
+                    route("/invite") {
+                        route("/send") {
+                            post("/{groupId}") {
+                                val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
+                                val groupId = call.parameters["groupId"]?.toIntOrNull()
+                                if (groupId != null && isGroupAdmin(user, groupId, groupRepository)) {
+                                    val group = groupRepository.getGroupById(groupId)
+                                        ?: throw BadRequestException("Invalid group id")
+                                    val email = call.receive<InvitationDTO>().email
+                                    val invitation =
+                                        joinGroupRequestRepository.createRequest(email, RequestType.INVITATION, groupId)
+                                    EmailUtils.sendEmail(
+                                        email,
+                                        "${user.name} has invited you to join ${group.name}",
+                                        "${user.name} has invited you to join ${group.name}.\nTo accept the invitation, go to http://localhost:8080/groups/invite/accept/${group.id}/${invitation.id}\nYou will need to log in or create a free account if you don't already have one."
+                                    )
+                                    call.respond(HttpStatusCode.OK)
+                                } else {
+                                    throw AuthenticationException("User ${user.id} not admin in group.")
+                                }
+                            }
+                        }
+                        route("/accept") {
+                            get("/{groupId}/{invitationId}") {
+                                val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
+                                val groupId = call.parameters["groupId"]?.toIntOrNull()
+                                val invitationId = call.parameters["invitationId"]?.toIntOrNull()
+                                if (invitationId != null && groupId != null) {
+                                    val group = groupRepository.getGroupById(groupId) ?: throw BadRequestException("Invalid group id")
+                                    val invitation = joinGroupRequestRepository.findByIdGroupAndEmail(invitationId, group.id, user.email)
+                                    if (
+                                        invitation != null
+                                    ) {
+                                        groupRepository.addUserToGroup(group, user, false)
+                                        joinGroupRequestRepository.acceptRequest(invitation)
+                                        call.respond(HttpStatusCode.OK)
+                                    } else {
+                                        throw BadRequestException("Not a valid invitation to accept")
+                                    }
+                                } else {
+                                    throw BadRequestException("Invalid URL")
+                                }
+                            }
+                        }
                     }
                 }
                 route("/messages") {
@@ -111,7 +153,7 @@ fun Application.configureRouting(
                         val groupId = call.parameters["groupId"]?.toIntOrNull()
                         if (groupId != null && isUserInGroup(user, groupId, groupRepository)) {
                             val event = call.receive<EventDTO>()
-                            eventRepository.addEventToGroup(
+                            eventRepository.createEvent(
                                 event,
                                 user.id,
                                 groupId
@@ -151,11 +193,17 @@ fun Application.configureRouting(
 }
 
 suspend fun isUserInGroup(user: User, groupId: Int, groupRepository: GroupRepository): Boolean {
-    val group = groupRepository.getGroupById(groupId)
-    if (group == null) {
-        throw BadRequestException("Invalid group id")
-    }
+    val group = groupRepository.getGroupById(groupId) ?: throw BadRequestException("Invalid group id")
     if (group.users.contains(user)) {
+        return true
+    } else {
+        throw AuthenticationException("User not in group")
+    }
+}
+
+suspend fun isGroupAdmin(user: User, groupId: Int, groupRepository: GroupRepository): Boolean {
+    val group = groupRepository.getGroupById(groupId) ?: throw BadRequestException("Invalid group id")
+    if (group.admins.contains(user)) {
         return true
     } else {
         throw AuthenticationException("User not in group")

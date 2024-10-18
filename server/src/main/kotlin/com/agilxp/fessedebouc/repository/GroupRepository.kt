@@ -8,6 +8,6 @@ interface GroupRepository {
     suspend fun getGroupById(id: Int): Group?
     suspend fun createGroup(group: GroupDTO): Group
     suspend fun updateGroup(group: Group): Group
-    suspend fun addUserToGroup(group: Group, user: User, isAdmin: Boolean)
+    suspend fun addUserToGroup(group: Group, user: User, admin: Boolean)
     suspend fun removeUserFromGroup(group: Group, user: User)
 }

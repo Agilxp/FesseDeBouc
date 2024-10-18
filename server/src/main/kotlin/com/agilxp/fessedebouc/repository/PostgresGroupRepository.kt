@@ -25,11 +25,11 @@ class PostgresGroupRepository : GroupRepository {
     }
 
     override suspend fun createGroup(group: GroupDTO): Group = suspendTransaction {
-        val group = GroupDAO.new {
+        val newGroup = GroupDAO.new {
             name = group.name
             description = group.description ?: ""
         }
-        groupDAOToModel(group)
+        groupDAOToModel(newGroup)
     }
 
     override suspend fun updateGroup(group: Group): Group = suspendTransaction {

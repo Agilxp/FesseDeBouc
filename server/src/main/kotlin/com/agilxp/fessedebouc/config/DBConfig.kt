@@ -1,11 +1,6 @@
 package com.agilxp.fessedebouc.config
 
-import com.agilxp.fessedebouc.db.EventParticipants
-import com.agilxp.fessedebouc.db.Events
-import com.agilxp.fessedebouc.db.Groups
-import com.agilxp.fessedebouc.db.Messages
-import com.agilxp.fessedebouc.db.UserGroups
-import com.agilxp.fessedebouc.db.Users
+import com.agilxp.fessedebouc.db.*
 import io.ktor.server.application.Application
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.Database
@@ -28,6 +23,7 @@ fun Application.configureDatabases() {
         SchemaUtils.createMissingTablesAndColumns(Messages)
         SchemaUtils.createMissingTablesAndColumns(Events)
         SchemaUtils.createMissingTablesAndColumns(EventParticipants)
+        SchemaUtils.createMissingTablesAndColumns(JoinGroupRequests)
     }
 }
 

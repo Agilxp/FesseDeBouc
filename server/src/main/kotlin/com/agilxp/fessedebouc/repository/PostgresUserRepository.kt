@@ -35,10 +35,10 @@ class PostgresUserRepository : UserRepository {
         }
     }
 
-    override suspend fun createUser(name: String, email: String, googleId: String): User = suspendTransaction {
+    override suspend fun createUser(userName: String, userEmail: String, googleId: String): User = suspendTransaction {
         userDAOToModel(UserDAO.new {
-            name
-            email
+            name = userName
+            email = userEmail
             google_id = googleId
         })
     }
