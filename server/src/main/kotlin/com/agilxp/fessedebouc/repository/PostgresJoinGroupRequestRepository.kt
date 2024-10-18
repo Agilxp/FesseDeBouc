@@ -16,6 +16,12 @@ class PostgresJoinGroupRequestRepository : JoinGroupRequestRepository {
             .firstOrNull()
     }
 
+    override suspend fun findByIdAndGroup(requestId: Int, groupId: Int): JoinGroupRequestDAO?  = suspendTransaction {
+        JoinGroupRequestDAO
+            .find { (JoinGroupRequests.id eq requestId) and (JoinGroupRequests.group eq groupId) }
+            .firstOrNull()
+    }
+
     override suspend fun createRequest(
         inviteeEmail: String,
         requestType: RequestType,

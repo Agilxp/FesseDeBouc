@@ -13,6 +13,8 @@ import io.ktor.server.application.call
 import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.principal
+import io.ktor.server.engine.*
+import io.ktor.server.plugins.*
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.receive
@@ -21,6 +23,8 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
+import org.jetbrains.exposed.exceptions.ExposedSQLException
+import org.postgresql.util.PSQLException
 
 fun Application.configureRouting(
     groupRepository: GroupRepository,
@@ -52,9 +56,87 @@ fun Application.configureRouting(
                         groupRepository.addUserToGroup(createdGroup, user, true)
                         call.respond(createdGroup)
                     }
-                    route("/invite") {
-                        route("/send") {
-                            post("/{groupId}") {
+                    route("/{groupId}") {
+                        route("/request") {
+                            post("/send") {
+                                val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
+                                val groupId = call.parameters["groupId"]?.toIntOrNull()
+                                if (groupId != null) {
+                                    val group = groupRepository.getGroupById(groupId)
+                                        ?: throw BadRequestException("Invalid group id")
+                                    val invitation =
+                                        joinGroupRequestRepository.createRequest(
+                                            user.email,
+                                            RequestType.REQUEST,
+                                            groupId
+                                        )
+                                    group.admins.forEach {
+                                        EmailUtils.sendEmail(
+                                            it.email,
+                                            "${user.name} has requested to join ${group.name}",
+                                            "${user.name} has requested to join ${group.name}.\nTo accept the request, go to http://localhost:8080/groups/${group.id}/request/${invitation.id}/accept\n" +
+                                                    "To deny the request, go to http://localhost:8080/groups/${group.id}/request/${invitation.id}/deny\nThis is sent to all administrators of the group."
+                                        )
+                                    }
+                                    call.respond(HttpStatusCode.OK)
+                                } else {
+                                    throw BadRequestException("Invalid group id")
+                                }
+                            }
+                            route("/{invitationId}") {
+                                get("/{action}") {
+                                    val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
+                                    val groupId = call.parameters["groupId"]?.toIntOrNull()
+                                    val invitationId = call.parameters["invitationId"]?.toIntOrNull()
+                                    val action = call.parameters["action"] ?: throw BadRequestException("Invalid URL")
+                                    if (invitationId != null && groupId != null && isGroupAdmin(
+                                            user,
+                                            groupId,
+                                            groupRepository
+                                        )
+                                    ) {
+                                        val group = groupRepository.getGroupById(groupId)
+                                            ?: throw BadRequestException("Invalid group id")
+                                        val invitation = joinGroupRequestRepository.findByIdAndGroup(
+                                            invitationId,
+                                            group.id,
+                                        )
+                                        if (invitation != null) {
+                                            if (invitation.status == RequestStatus.PENDING) {
+                                                when (action) {
+                                                    "accept" -> {
+                                                        try {
+                                                            val u = userRepository.getUserByEmail(invitation.email)
+                                                                ?: throw BadRequestException("Invalid request to join group")
+                                                            groupRepository.addUserToGroup(group, u, false)
+                                                        } catch (e: ExposedSQLException) {
+                                                            println("Seems like this user is already in the group")
+                                                        }
+                                                        joinGroupRequestRepository.acceptRequest(invitation)
+                                                    }
+
+                                                    "deny" -> {
+                                                        joinGroupRequestRepository.declineRequest(invitation)
+                                                    }
+
+                                                    else -> throw BadRequestException("Invalid action")
+                                                }
+                                                call.respond(HttpStatusCode.OK)
+                                            } else {
+                                                call.respond(
+                                                    HttpStatusCode.OK,
+                                                    "Invitation already ${invitation.status.name.lowercase()}"
+                                                )
+                                            }
+                                        } else {
+                                            throw BadRequestException("Not a valid invitation to accept")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        route("/invite") {
+                            post("/send") {
                                 val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
                                 val groupId = call.parameters["groupId"]?.toIntOrNull()
                                 if (groupId != null && isGroupAdmin(user, groupId, groupRepository)) {
@@ -62,37 +144,50 @@ fun Application.configureRouting(
                                         ?: throw BadRequestException("Invalid group id")
                                     val email = call.receive<InvitationDTO>().email
                                     val invitation =
-                                        joinGroupRequestRepository.createRequest(email, RequestType.INVITATION, groupId)
+                                        joinGroupRequestRepository.createRequest(
+                                            email,
+                                            RequestType.INVITATION,
+                                            groupId
+                                        )
                                     EmailUtils.sendEmail(
                                         email,
                                         "${user.name} has invited you to join ${group.name}",
-                                        "${user.name} has invited you to join ${group.name}.\nTo accept the invitation, go to http://localhost:8080/groups/invite/accept/${group.id}/${invitation.id}\nYou will need to log in or create a free account if you don't already have one."
+                                        "${user.name} has invited you to join ${group.name}.\nTo accept the invitation, go to http://localhost:8080/groups/${group.id}/invite/${invitation.id}/accept\nYou will need to log in or create a free account if you don't already have one."
                                     )
                                     call.respond(HttpStatusCode.OK)
                                 } else {
                                     throw AuthenticationException("User ${user.id} not admin in group.")
                                 }
                             }
-                        }
-                        route("/accept") {
-                            get("/{groupId}/{invitationId}") {
-                                val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
-                                val groupId = call.parameters["groupId"]?.toIntOrNull()
-                                val invitationId = call.parameters["invitationId"]?.toIntOrNull()
-                                if (invitationId != null && groupId != null) {
-                                    val group = groupRepository.getGroupById(groupId) ?: throw BadRequestException("Invalid group id")
-                                    val invitation = joinGroupRequestRepository.findByIdGroupAndEmail(invitationId, group.id, user.email)
-                                    if (
-                                        invitation != null
-                                    ) {
-                                        groupRepository.addUserToGroup(group, user, false)
-                                        joinGroupRequestRepository.acceptRequest(invitation)
-                                        call.respond(HttpStatusCode.OK)
+                            route("/{invitationId}") {
+                                get("/accept") {
+                                    val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
+                                    val groupId = call.parameters["groupId"]?.toIntOrNull()
+                                    val invitationId = call.parameters["invitationId"]?.toIntOrNull()
+                                    if (invitationId != null && groupId != null) {
+                                        val group = groupRepository.getGroupById(groupId)
+                                            ?: throw BadRequestException("Invalid group id")
+                                        val invitation = joinGroupRequestRepository.findByIdGroupAndEmail(
+                                            invitationId,
+                                            group.id,
+                                            user.email
+                                        )
+                                        if (
+                                            invitation != null
+                                        ) {
+                                            try {
+                                                groupRepository.addUserToGroup(group, user, false)
+                                            } catch (e: ExposedSQLException) {
+                                                println("Seems like this user is already in the group")
+                                            }
+                                            joinGroupRequestRepository.acceptRequest(invitation)
+                                            call.respond(HttpStatusCode.OK)
+                                        } else {
+                                            throw BadRequestException("Not a valid invitation to accept")
+                                        }
                                     } else {
-                                        throw BadRequestException("Not a valid invitation to accept")
+                                        throw BadRequestException("Invalid URL")
                                     }
-                                } else {
-                                    throw BadRequestException("Invalid URL")
                                 }
                             }
                         }
@@ -213,11 +308,14 @@ suspend fun isGroupAdmin(user: User, groupId: Int, groupRepository: GroupReposit
 suspend fun getInfoFromPrincipal(call: ApplicationCall, jwtConfig: JWTConfig, userRepository: UserRepository): User {
     val principal = call.principal<JWTPrincipal>(jwtConfig.name)
     if (principal != null) {
-        val userId = principal.payload.getClaim("user_id").asInt()
-        val email = principal.payload.getClaim("user_email").asString()
-        val googleId = principal.payload.getClaim("google_id").asString()
-        val user = userRepository.getUserById(userId)
-        if (user?.email == email && user.googleId == googleId) {
+        val userId: Int =
+            principal.payload.getClaim("user_id").asInt() ?: throw AuthenticationException("Invalid principal")
+        val email: String =
+            principal.payload.getClaim("user_email").asString() ?: throw AuthenticationException("Invalid principal")
+        val googleId: String =
+            principal.payload.getClaim("google_id").asString() ?: throw AuthenticationException("Invalid principal")
+        val user = userRepository.getUserById(userId) ?: throw AuthenticationException("Invalid principal")
+        if (user.email == email && user.googleId == googleId) {
             return user
         } else {
             throw AuthenticationException("Invalid principal")

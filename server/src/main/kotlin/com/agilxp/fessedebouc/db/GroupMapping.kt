@@ -20,6 +20,9 @@ object UserGroups : IntIdTable("user_groups") {
     val userId = reference("user_id", Users, onDelete = ReferenceOption.CASCADE)
     val groupId = reference("group_id", Groups, onDelete = ReferenceOption.CASCADE)
     val isAdmin = bool("is_admin")
+    init {
+        index(true, userId, groupId)
+    }
 }
 
 class GroupDAO(id: EntityID<Int>) : IntEntity(id) {
