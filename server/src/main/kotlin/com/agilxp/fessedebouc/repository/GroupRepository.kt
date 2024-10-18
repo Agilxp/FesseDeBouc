@@ -10,4 +10,6 @@ interface GroupRepository {
     suspend fun updateGroup(group: Group): Group
     suspend fun addUserToGroup(group: Group, user: User, admin: Boolean)
     suspend fun removeUserFromGroup(group: Group, user: User)
+    suspend fun getGroupsForUser(user: User): List<Group>
+    suspend fun findByName(groupName: String): List<GroupDTO>
 }

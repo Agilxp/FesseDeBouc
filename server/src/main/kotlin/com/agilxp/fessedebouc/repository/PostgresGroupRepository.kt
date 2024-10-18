@@ -1,18 +1,10 @@
 package com.agilxp.fessedebouc.repository
 
 import com.agilxp.fessedebouc.config.suspendTransaction
-import com.agilxp.fessedebouc.db.Group
-import com.agilxp.fessedebouc.db.GroupDAO
-import com.agilxp.fessedebouc.db.Groups
-import com.agilxp.fessedebouc.db.User
-import com.agilxp.fessedebouc.db.UserGroups
-import com.agilxp.fessedebouc.db.groupDAOToModel
+import com.agilxp.fessedebouc.db.*
 import com.agilxp.fessedebouc.model.GroupDTO
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.update
-import org.jetbrains.exposed.sql.upsert
 
 class PostgresGroupRepository : GroupRepository {
 
@@ -56,5 +48,16 @@ class PostgresGroupRepository : GroupRepository {
         UserGroups.deleteWhere(1) {
             (userId eq user.id) and (groupId eq group.id)
         }
+    }
+
+    override suspend fun getGroupsForUser(user: User): List<Group> = suspendTransaction {
+        UserGroups.selectAll()
+            .where { UserGroups.userId eq user.id }
+            .map { groupDAOToModel(GroupDAO[it[UserGroups.groupId].value]) }
+    }
+
+    override suspend fun findByName(groupName: String): List<GroupDTO> = suspendTransaction {
+        GroupDAO.find { Groups.name.lowerCase() like "%${groupName.lowercase()}%" }
+            .map { GroupDTO(it.id.value, it.name, it.description) }
     }
 }

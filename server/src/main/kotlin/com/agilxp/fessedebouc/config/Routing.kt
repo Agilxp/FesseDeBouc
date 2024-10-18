@@ -49,6 +49,15 @@ fun Application.configureRouting(
         authenticate("auth-session") {
             authenticate(jwtConfig.name) {
                 route("/groups") {
+                    get("/mine") {
+                        val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
+                        val myGroups = groupRepository.getGroupsForUser(user)
+                        call.respond(myGroups)
+                    }
+                    get("/search") {
+                        val groupName: String = call.request.queryParameters["name"] ?: throw BadRequestException("Missing parameter")
+                        call.respond(groupRepository.findByName(groupName))
+                    }
                     post {
                         val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
                         val groupToCreate = call.receive<GroupDTO>()
