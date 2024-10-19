@@ -52,7 +52,8 @@ fun Application.configureRouting(
                         call.respond(myGroups)
                     }
                     get("/search") {
-                        val groupName: String = call.request.queryParameters["name"] ?: throw BadRequestException("Missing parameter")
+                        val groupName: String =
+                            call.request.queryParameters["name"] ?: throw BadRequestException("Missing parameter")
                         call.respond(groupRepository.findByName(groupName))
                     }
                     post {
@@ -120,6 +121,8 @@ fun Application.configureRouting(
                                         )
                                         if (invitation != null) {
                                             if (invitation.status == RequestStatus.PENDING) {
+                                                var pastTenseAction = ""
+                                                var text = ""
                                                 when (action) {
                                                     "accept" -> {
                                                         try {
@@ -130,14 +133,22 @@ fun Application.configureRouting(
                                                             println("Seems like this user is already in the group")
                                                         }
                                                         joinGroupRequestRepository.acceptRequest(invitation)
+                                                        pastTenseAction = "accepted"
+                                                        text = "You can now access the group in the application."
                                                     }
 
                                                     "deny" -> {
                                                         joinGroupRequestRepository.declineRequest(invitation)
+                                                        pastTenseAction = "denied"
+                                                        text = "An admin has denied your request. You might need to contact them directly by other means to get an invitation."
                                                     }
 
                                                     else -> throw BadRequestException("Invalid action")
                                                 }
+                                                EmailUtils.sendEmail(
+                                                    invitation.email,
+                                                    "Your request to join ${group.name} has been ${pastTenseAction}.",
+                                                    text)
                                                 call.respond(HttpStatusCode.OK)
                                             } else {
                                                 call.respond(
