@@ -12,7 +12,7 @@ import kotlin.reflect.KProperty
 
 
 object Groups : IntIdTable("groups") {
-    val name = varchar("name", 255)
+    val name = varchar("name", 255).uniqueIndex()
     val description = varchar("description", 255)
 }
 

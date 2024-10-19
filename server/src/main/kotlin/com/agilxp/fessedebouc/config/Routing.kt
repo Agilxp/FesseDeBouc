@@ -13,18 +13,12 @@ import io.ktor.server.application.call
 import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.principal
-import io.ktor.server.engine.*
-import io.ktor.server.plugins.*
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
-import io.ktor.server.routing.get
-import io.ktor.server.routing.post
-import io.ktor.server.routing.route
-import io.ktor.server.routing.routing
+import io.ktor.server.routing.*
 import org.jetbrains.exposed.exceptions.ExposedSQLException
-import org.postgresql.util.PSQLException
 
 fun Application.configureRouting(
     groupRepository: GroupRepository,
@@ -43,6 +37,9 @@ fun Application.configureRouting(
         }
         exception<BadRequestException> { call, cause ->
             call.respond(HttpStatusCode.BadRequest, cause.message)
+        }
+        exception<DuplicateException> { call, cause ->
+            call.respond(HttpStatusCode.Conflict, cause.message)
         }
     }
     routing {
@@ -63,9 +60,20 @@ fun Application.configureRouting(
                         val groupToCreate = call.receive<GroupDTO>()
                         val createdGroup = groupRepository.createGroup(groupToCreate)
                         groupRepository.addUserToGroup(createdGroup, user, true)
-                        call.respond(createdGroup)
+                        call.respond(HttpStatusCode.Created, createdGroup)
                     }
                     route("/{groupId}") {
+                        put {
+                            val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
+                            val groupId = call.parameters["groupId"]?.toIntOrNull()
+                            val groupToUpdate = call.receive<GroupDTO>()
+                            if (groupId != null && isGroupAdmin(user, groupId, groupRepository)) {
+                                groupRepository.updateGroup(groupId, groupToUpdate)
+                                call.respond(HttpStatusCode.OK)
+                            } else {
+                                throw AuthenticationException("User ${user.id} not admin in group.")
+                            }
+                        }
                         route("/request") {
                             post("/send") {
                                 val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
@@ -347,3 +355,5 @@ suspend fun getInfoFromPrincipal(call: ApplicationCall, jwtConfig: JWTConfig, us
 data class AuthenticationException(override val message: String) : Exception()
 
 data class BadRequestException(override val message: String) : Exception()
+
+data class DuplicateException(override val message: String) : Exception()

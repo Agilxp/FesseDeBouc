@@ -7,7 +7,7 @@ import com.agilxp.fessedebouc.model.GroupDTO
 interface GroupRepository {
     suspend fun getGroupById(id: Int): Group?
     suspend fun createGroup(group: GroupDTO): Group
-    suspend fun updateGroup(group: Group): Group
+    suspend fun updateGroup(groupId: Int, group: GroupDTO): Group
     suspend fun addUserToGroup(group: Group, user: User, admin: Boolean)
     suspend fun removeUserFromGroup(group: Group, user: User)
     suspend fun getGroupsForUser(user: User): List<Group>

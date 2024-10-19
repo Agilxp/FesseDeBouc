@@ -1,5 +1,6 @@
 package com.agilxp.fessedebouc.repository
 
+import com.agilxp.fessedebouc.config.DuplicateException
 import com.agilxp.fessedebouc.config.suspendTransaction
 import com.agilxp.fessedebouc.db.*
 import com.agilxp.fessedebouc.model.GroupDTO
@@ -17,6 +18,10 @@ class PostgresGroupRepository : GroupRepository {
     }
 
     override suspend fun createGroup(group: GroupDTO): Group = suspendTransaction {
+        val existingGroup = GroupDAO.find { Groups.name eq group.name }.firstOrNull()
+        if (existingGroup != null) {
+            throw DuplicateException("Group already exists")
+        }
         val newGroup = GroupDAO.new {
             name = group.name
             description = group.description ?: ""
@@ -24,13 +29,16 @@ class PostgresGroupRepository : GroupRepository {
         groupDAOToModel(newGroup)
     }
 
-    override suspend fun updateGroup(group: Group): Group = suspendTransaction {
-        Groups.update {
-            it[id] = group.id
-            it[name] = group.name
-            it[description] = group.description
+    override suspend fun updateGroup(groupId: Int, group: GroupDTO): Group = suspendTransaction {
+        val existingGroup = GroupDAO.find { Groups.name eq group.name }.firstOrNull()
+        if (existingGroup != null && groupId != existingGroup.id.value) {
+            throw DuplicateException("Group name already in use")
         }
-        groupDAOToModel(GroupDAO[group.id])
+        Groups.update(where = { Groups.id eq groupId }) {
+            it[name] = group.name
+            it[description] = group.description ?: ""
+        }
+        groupDAOToModel(GroupDAO[groupId])
     }
 
     override suspend fun addUserToGroup(group: Group, user: User, admin: Boolean): Unit = suspendTransaction {
