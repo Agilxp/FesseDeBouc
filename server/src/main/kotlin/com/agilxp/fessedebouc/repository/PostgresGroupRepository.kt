@@ -50,11 +50,11 @@ class PostgresGroupRepository : GroupRepository {
     }
 
     override suspend fun removeUserFromGroup(
-        group: Group,
-        user: User
+        groupId: Int,
+        userId: Int
     ): Unit = suspendTransaction {
-        UserGroups.deleteWhere(1) {
-            (userId eq user.id) and (groupId eq group.id)
+        UserGroups.deleteWhere {
+            (UserGroups.userId eq userId) and (UserGroups.groupId eq groupId)
         }
     }
 

@@ -75,6 +75,19 @@ fun Application.configureRouting(
                                 throw AuthenticationException("User ${user.id} not admin in group.")
                             }
                         }
+                        route("/kick") {
+                            delete("/{userId}") {
+                                val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
+                                val groupId = call.parameters["groupId"]?.toIntOrNull()
+                                val userId = call.parameters["userId"]?.toIntOrNull()
+                                if (groupId != null && userId != null && isGroupAdmin(user, groupId, groupRepository)) {
+                                    groupRepository.removeUserFromGroup(groupId, userId)
+                                    call.respond(HttpStatusCode.OK)
+                                } else {
+                                    throw AuthenticationException("User ${user.id} not admin in group.")
+                                }
+                            }
+                        }
                         route("/request") {
                             post("/send") {
                                 val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
