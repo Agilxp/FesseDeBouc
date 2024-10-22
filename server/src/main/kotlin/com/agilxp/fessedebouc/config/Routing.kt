@@ -95,6 +95,13 @@ fun Application.configureRouting(
                                 if (groupId != null) {
                                     val group = groupRepository.getGroupById(groupId)
                                         ?: throw BadRequestException("Invalid group id")
+                                    val joinRequest = joinGroupRequestRepository.findByGroupEmailAndStatus(groupId, user.email, listOf(RequestStatus.PENDING))
+                                    if (joinRequest != null) {
+                                        throw BadRequestException("You already requested to join ${group.name}.")
+                                    }
+                                    if (group.users.contains(user)) {
+                                        throw BadRequestException("You are already in the group: ${group.name}.")
+                                    }
                                     val invitation =
                                         joinGroupRequestRepository.createRequest(
                                             user.email,
