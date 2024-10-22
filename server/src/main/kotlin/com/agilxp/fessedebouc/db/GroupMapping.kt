@@ -1,5 +1,6 @@
 package com.agilxp.fessedebouc.db
 
+import com.agilxp.fessedebouc.model.GroupDTO
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
@@ -33,6 +34,8 @@ class GroupDAO(id: EntityID<Int>) : IntEntity(id) {
 
     val users by UserDAO via UserGroups
     val admins get() = mapAdmin(this, GroupDAO::users)
+
+    fun toDto() = GroupDTO(name, description)
 }
 
 
@@ -52,20 +55,3 @@ fun mapAdmin(o: GroupDAO, unused: KProperty<*>): SizedIterable<UserDAO> {
         entityCache.getOrPutReferrers(o.id, UserGroups.userId, query)
     }
 }
-
-@Serializable
-data class Group(
-    val id: Int,
-    val name: String,
-    val description: String,
-    val users: List<User>,
-    val admins: List<User>
-)
-
-fun groupDAOToModel(dao: GroupDAO) = Group(
-    dao.id.value,
-    dao.name,
-    dao.description,
-    dao.users.map { userDAOToModel(it) },
-    dao.admins.map { userDAOToModel(it) }
-)

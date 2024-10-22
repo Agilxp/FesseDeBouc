@@ -1,8 +1,10 @@
 package com.agilxp.fessedebouc.repository
 
-import com.agilxp.fessedebouc.db.Message
+import com.agilxp.fessedebouc.db.GroupDAO
+import com.agilxp.fessedebouc.db.MessageDAO
+import com.agilxp.fessedebouc.db.UserDAO
 
 interface MessageRepository {
-    suspend fun getMessagesForGroup(groupId: Int): List<Message>
-    suspend fun addMessageToGroup(content: String, userId: Int, groupId: Int)
+    suspend fun getMessagesForGroup(group: GroupDAO): List<MessageDAO>
+    suspend fun addMessageToGroup(message: String, userDAO: UserDAO, groupDAO: GroupDAO)
 }
