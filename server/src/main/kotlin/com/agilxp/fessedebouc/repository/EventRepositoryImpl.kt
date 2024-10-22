@@ -13,7 +13,7 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.upsert
 
-class PostgresEventRepository : EventRepository {
+class EventRepositoryImpl : EventRepository {
     override suspend fun getEventsForGroup(group: GroupDAO): List<EventDAO> = suspendTransaction {
         EventDAO.find { (Events.group eq group.id) }.map { it }
     }

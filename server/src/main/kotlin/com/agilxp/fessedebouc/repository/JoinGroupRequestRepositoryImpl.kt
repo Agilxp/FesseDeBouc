@@ -4,7 +4,7 @@ import com.agilxp.fessedebouc.config.suspendTransaction
 import com.agilxp.fessedebouc.db.*
 import org.jetbrains.exposed.sql.*
 
-class PostgresJoinGroupRequestRepository : JoinGroupRequestRepository {
+class JoinGroupRequestRepositoryImpl : JoinGroupRequestRepository {
     override suspend fun findByIdGroupAndEmail(
         requestId: Int,
         groupId: Int,

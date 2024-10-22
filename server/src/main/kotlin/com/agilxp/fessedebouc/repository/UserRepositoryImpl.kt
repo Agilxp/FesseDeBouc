@@ -4,7 +4,7 @@ import com.agilxp.fessedebouc.config.suspendTransaction
 import com.agilxp.fessedebouc.db.UserDAO
 import com.agilxp.fessedebouc.db.Users
 
-class PostgresUserRepository : UserRepository {
+class UserRepositoryImpl : UserRepository {
 
     override suspend fun getUserById(id: Int): UserDAO? = suspendTransaction {
         UserDAO.findById(id)

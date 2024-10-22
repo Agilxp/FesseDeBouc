@@ -55,7 +55,11 @@ fun Application.configureRouting(
                     get("/search") {
                         val groupName: String =
                             call.request.queryParameters["name"] ?: throw BadRequestException("Missing parameter")
-                        call.respond(groupRepository.findByName(groupName).map { it.toDto() })
+                        if (groupName.trim().isEmpty()) {
+                            call.respond(emptyList<GroupDTO>())
+                        } else {
+                            call.respond(groupRepository.findByName(groupName).map { it.toDto() })
+                        }
                     }
                     post {
                         val user = getInfoFromPrincipal(call, jwtConfig, userRepository)

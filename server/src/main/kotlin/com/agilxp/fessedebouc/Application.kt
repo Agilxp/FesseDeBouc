@@ -3,6 +3,7 @@ package com.agilxp.fessedebouc
 import com.agilxp.fessedebouc.config.configureAuth
 import com.agilxp.fessedebouc.config.configureDatabases
 import com.agilxp.fessedebouc.config.configureRouting
+import com.agilxp.fessedebouc.model.DBConfigProperties
 import com.agilxp.fessedebouc.model.JWTConfig
 import com.agilxp.fessedebouc.model.OAuthConfig
 import com.agilxp.fessedebouc.repository.*
@@ -16,14 +17,27 @@ fun main(args: Array<String>): Unit = EngineMain.main(args)
 fun Application.module() {
     val jwtConfig = environment.config.config("ktor.auth.jwt").jwtConfig()
     val oauthConfig = environment.config.config("ktor.auth.oauth.google").oauthConfig()
-    val groupRepository = PostgresGroupRepository()
-    val userRepository = PostgresUserRepository()
-    val messageRepository = PostgresMessageRepository()
-    val eventRepository = PostgresEventRepository()
-    val joinGroupRequestRepository = PostgresJoinGroupRequestRepository()
-    configureAuth(clock = Clock.systemUTC(), jwtConfig = jwtConfig, oauthConfig = oauthConfig, userRepository = userRepository)
-    configureDatabases()
-    configureRouting(groupRepository, userRepository, messageRepository, eventRepository, joinGroupRequestRepository, jwtConfig)
+    val dbConfig = environment.config.config("ktor.db").dbConfig()
+    val groupRepository = GroupRepositoryImpl()
+    val userRepository = UserRepositoryImpl()
+    val messageRepository = MessageRepositoryImpl()
+    val eventRepository = EventRepositoryImpl()
+    val joinGroupRequestRepository = JoinGroupRequestRepositoryImpl()
+    configureAuth(
+        clock = Clock.systemUTC(),
+        jwtConfig = jwtConfig,
+        oauthConfig = oauthConfig,
+        userRepository = userRepository
+    )
+    configureDatabases(dbConfig)
+    configureRouting(
+        groupRepository,
+        userRepository,
+        messageRepository,
+        eventRepository,
+        joinGroupRequestRepository,
+        jwtConfig
+    )
 }
 
 fun ApplicationConfig.jwtConfig(): JWTConfig =
@@ -46,4 +60,12 @@ fun ApplicationConfig.oauthConfig(): OAuthConfig =
         redirectUrl = property("redirectUrl").getString(),
         userInfoUrl = property("userInfoUrl").getString(),
         defaultScopes = property("defaultScopes").getList()
+    )
+
+fun ApplicationConfig.dbConfig(): DBConfigProperties =
+    DBConfigProperties(
+        url = property("url").getString(),
+        driver = property("driver").getString(),
+        username = property("username").getString(),
+        password = property("password").getString(),
     )

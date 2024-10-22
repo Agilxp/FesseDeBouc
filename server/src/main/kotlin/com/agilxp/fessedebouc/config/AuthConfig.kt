@@ -66,7 +66,7 @@ fun Application.configureAuth(
                 call.respondRedirect("/login")
             }
         }
-        jwt("auth-jwt") {
+        jwt(jwtConfig.name) {
             realm = jwtConfig.realm
             verifier(
                 JWT

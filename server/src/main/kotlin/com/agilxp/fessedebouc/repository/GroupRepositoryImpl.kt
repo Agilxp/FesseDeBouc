@@ -7,7 +7,7 @@ import com.agilxp.fessedebouc.model.GroupDTO
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
-class PostgresGroupRepository : GroupRepository {
+class GroupRepositoryImpl : GroupRepository {
 
     override suspend fun getGroupById(id: Int): GroupDAO? = suspendTransaction {
         GroupDAO.findById(id)
@@ -38,7 +38,7 @@ class PostgresGroupRepository : GroupRepository {
     }
 
     override suspend fun addUserToGroup(group: GroupDAO, user: UserDAO, admin: Boolean): Unit = suspendTransaction {
-        UserGroups.upsert {
+        UserGroups.insert {
             it[userId] = user.id
             it[groupId] = group.id
             it[isAdmin] = admin

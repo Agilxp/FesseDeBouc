@@ -6,7 +6,7 @@ import com.agilxp.fessedebouc.db.MessageDAO
 import com.agilxp.fessedebouc.db.Messages
 import com.agilxp.fessedebouc.db.UserDAO
 
-class PostgresMessageRepository: MessageRepository {
+class MessageRepositoryImpl: MessageRepository {
     override suspend fun getMessagesForGroup(group: GroupDAO): List<MessageDAO> = suspendTransaction {
         MessageDAO.find { (Messages.group eq group.id) }.toList()
     }
