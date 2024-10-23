@@ -25,8 +25,6 @@ class MessageDAO(id: EntityID<Int>) : IntEntity(id) {
     var sender by UserDAO referencedOn Messages.sender
     var group by GroupDAO referencedOn Messages.group
 
-    fun toDto() = MessageDTO(KOffsetDateTimeSerializer.serialize(createdAt), content, sender.toDto())
-
     fun toModel() = Message(
         id = id.value,
         createdAt = createdAt,

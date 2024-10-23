@@ -5,15 +5,6 @@ import com.agilxp.fessedebouc.db.*
 import org.jetbrains.exposed.sql.*
 
 class JoinGroupRequestRepositoryImpl : JoinGroupRequestRepository {
-    override suspend fun findByIdGroupAndEmail(
-        requestId: Int,
-        groupId: Int,
-        inviteeEmail: String
-    ): JoinGroupRequestDAO? = suspendTransaction {
-        JoinGroupRequestDAO
-            .find { (JoinGroupRequests.id eq requestId) and (JoinGroupRequests.group eq groupId) and (JoinGroupRequests.email eq inviteeEmail) }
-            .firstOrNull()
-    }
 
     override suspend fun findByGroupEmailAndStatus(
         groupId: Int,

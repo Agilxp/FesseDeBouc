@@ -35,8 +35,6 @@ class GroupDAO(id: EntityID<Int>) : IntEntity(id) {
     val users by UserDAO via UserGroups
     val admins get() = mapAdmin(this, GroupDAO::users)
 
-    fun toDto() = GroupDTO(name, description)
-
     fun toModel() = Group(
         id.value,
         name,

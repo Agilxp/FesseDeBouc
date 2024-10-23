@@ -37,7 +37,6 @@ class EmailUtils {
             message.setRecipient(Message.RecipientType.TO, InternetAddress(recipient))
             message.subject = subject
             message.setText(text)
-
             Transport.send(message)
         }
     }

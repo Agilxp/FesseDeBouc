@@ -7,7 +7,7 @@ import org.jetbrains.exposed.dao.id.IntIdTable
 
 enum class RequestType {
     REQUEST,
-    INVITATION
+    INVITATION,
 }
 
 enum class RequestStatus {

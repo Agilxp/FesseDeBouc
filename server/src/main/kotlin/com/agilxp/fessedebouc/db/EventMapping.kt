@@ -51,14 +51,6 @@ class EventDAO(id: EntityID<Int>) : IntEntity(id) {
     val declined get() = getParticipation(this, EventStatus.DECLINED)
     val unanswered get() = getParticipation(this, EventStatus.UNANSWERED)
 
-    fun toDto() = EventDTO(
-        name,
-        description,
-        KOffsetDateTimeSerializer.serialize(start),
-        KOffsetDateTimeSerializer.serialize(end),
-        location
-    )
-
     fun toModel() = Event(
         id = id.value,
         name = name,

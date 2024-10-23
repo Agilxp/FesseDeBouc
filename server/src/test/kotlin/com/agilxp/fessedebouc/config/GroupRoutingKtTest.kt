@@ -92,6 +92,32 @@ class GroupRoutingKtTest {
     }
 
     @Test
+    fun testDuplicateGroup() = testApplication {
+        application {
+            testModule()
+        }
+        val client = createClient {
+            install(ContentNegotiation) {
+                json()
+            }
+            defaultRequest {
+                headers.append(HttpHeaders.Authorization, "Bearer ${getAdminUserToken()}")
+            }
+        }
+        var response = client.post("/groups") {
+            contentType(ContentType.Application.Json)
+            setBody(group1)
+        }
+        assertEquals(HttpStatusCode.Created, response.status)
+        assertEquals(group1, response.body())
+        response = client.post("/groups") {
+            contentType(ContentType.Application.Json)
+            setBody(group1)
+        }
+        assertEquals(HttpStatusCode.Conflict, response.status)
+    }
+
+    @Test
     fun testSearchGroup() = testApplication {
         application {
             testModule()
