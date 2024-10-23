@@ -241,7 +241,7 @@ fun Application.configureRouting(
                         val groupId = UUID.fromString(call.parameters["groupId"])
                         if (groupId != null) {
                             val group = isUserInGroup(user, groupId, groupRepository)
-                            val message = call.receive<String>()
+                            val message = call.receive<PostMessageDTO>()
                             if (message.isEmpty()) {
                                 throw BadRequestException("Message cannot be empty")
                             }
