@@ -2,14 +2,15 @@ package com.agilxp.fessedebouc.db
 
 import com.agilxp.fessedebouc.model.EventDTO
 import com.agilxp.fessedebouc.util.KOffsetDateTimeSerializer
-import org.jetbrains.exposed.dao.IntEntity
-import org.jetbrains.exposed.dao.IntEntityClass
+import org.jetbrains.exposed.dao.UUIDEntity
+import org.jetbrains.exposed.dao.UUIDEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.kotlin.datetime.timestampWithTimeZone
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.OffsetDateTime
+import java.util.*
 
 enum class EventStatus {
     UNANSWERED,
@@ -18,7 +19,7 @@ enum class EventStatus {
     DECLINED,
 }
 
-object Events : IntIdTable("events") {
+object Events : UUIDTable("events") {
     val name = varchar("name", 255)
     val description = varchar("description", 255)
     val start = timestampWithTimeZone("start")
@@ -36,8 +37,8 @@ object EventParticipants : Table("event_participants") {
     override val primaryKey = PrimaryKey(eventId, userId)
 }
 
-class EventDAO(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<EventDAO>(Events)
+class EventDAO(id: EntityID<UUID>) : UUIDEntity(id) {
+    companion object : UUIDEntityClass<EventDAO>(Events)
 
     var name by Events.name
     var description by Events.description
@@ -85,7 +86,7 @@ fun getParticipation(o: EventDAO, status: EventStatus): SizedIterable<UserDAO> {
 }
 
 data class Event(
-    val id: Int,
+    val id: UUID,
     val name: String,
     val description: String,
     val start: OffsetDateTime,

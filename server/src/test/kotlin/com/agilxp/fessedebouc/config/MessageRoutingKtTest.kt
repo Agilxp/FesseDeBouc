@@ -1,11 +1,9 @@
 package com.agilxp.fessedebouc.config
 
-import com.agilxp.fessedebouc.container
+import com.agilxp.fessedebouc.*
 import com.agilxp.fessedebouc.db.*
 import com.agilxp.fessedebouc.db.UserGroups.groupId
-import com.agilxp.fessedebouc.getAdminUserToken
 import com.agilxp.fessedebouc.model.MessageDTO
-import com.agilxp.fessedebouc.testModule
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -34,8 +32,8 @@ class MessageRoutingKtTest {
             testModule()
             transaction {
                 UserGroups.insert {
-                    it[userId] = EntityID(1, Users)
-                    it[groupId] = EntityID(1, Groups)
+                    it[userId] = EntityID(adminUUID, Users)
+                    it[groupId] = EntityID(groupUUID, Groups)
                     it[isAdmin] = true
                 }
             }
@@ -48,7 +46,7 @@ class MessageRoutingKtTest {
                 headers.append(HttpHeaders.Authorization, "Bearer ${getAdminUserToken()}")
             }
         }
-        val response = client.get("/messages/1") {
+        val response = client.get("/messages/$groupUUID") {
             contentType(ContentType.Application.Json)
         }
         assertEquals(HttpStatusCode.OK, response.status)
@@ -61,18 +59,18 @@ class MessageRoutingKtTest {
             testModule()
             transaction {
                 UserGroups.insert {
-                    it[userId] = EntityID(1, Users)
-                    it[groupId] = EntityID(1, Groups)
+                    it[userId] = EntityID(adminUUID, Users)
+                    it[groupId] = EntityID(groupUUID, Groups)
                     it[isAdmin] = true
                 }
                 Messages.insert {
-                    it[groupId] = EntityID(1, Groups)
-                    it[sender] = EntityID(1, Users)
+                    it[groupId] = EntityID(groupUUID, Groups)
+                    it[sender] = EntityID(adminUUID, Users)
                     it[content] = "First message"
                 }
                 Messages.insert {
-                    it[groupId] = EntityID(1, Groups)
-                    it[sender] = EntityID(1, Users)
+                    it[groupId] = EntityID(groupUUID, Groups)
+                    it[sender] = EntityID(adminUUID, Users)
                     it[content] = "Second message"
                 }
             }
@@ -85,7 +83,7 @@ class MessageRoutingKtTest {
                 headers.append(HttpHeaders.Authorization, "Bearer ${getAdminUserToken()}")
             }
         }
-        val response = client.get("/messages/1") {
+        val response = client.get("/messages/$groupUUID") {
             contentType(ContentType.Application.Json)
         }
         assertEquals(HttpStatusCode.OK, response.status)
@@ -99,13 +97,13 @@ class MessageRoutingKtTest {
             testModule()
             transaction {
                 Messages.insert {
-                    it[groupId] = EntityID(1, Groups)
-                    it[sender] = EntityID(1, Users)
+                    it[groupId] = EntityID(groupUUID, Groups)
+                    it[sender] = EntityID(adminUUID, Users)
                     it[content] = "First message"
                 }
                 Messages.insert {
-                    it[groupId] = EntityID(1, Groups)
-                    it[sender] = EntityID(1, Users)
+                    it[groupId] = EntityID(groupUUID, Groups)
+                    it[sender] = EntityID(adminUUID, Users)
                     it[content] = "Second message"
                 }
             }
@@ -118,7 +116,7 @@ class MessageRoutingKtTest {
                 headers.append(HttpHeaders.Authorization, "Bearer ${getAdminUserToken()}")
             }
         }
-        val response = client.get("/messages/1") {
+        val response = client.get("/messages/$groupUUID") {
             contentType(ContentType.Application.Json)
         }
         assertEquals(HttpStatusCode.Unauthorized, response.status)
@@ -130,8 +128,8 @@ class MessageRoutingKtTest {
             testModule()
             transaction {
                 UserGroups.insert {
-                    it[userId] = EntityID(1, Users)
-                    it[groupId] = EntityID(1, Groups)
+                    it[userId] = EntityID(adminUUID, Users)
+                    it[groupId] = EntityID(groupUUID, Groups)
                     it[isAdmin] = true
                 }
                 assertEquals(0, Messages.selectAll().count())
@@ -145,7 +143,7 @@ class MessageRoutingKtTest {
                 headers.append(HttpHeaders.Authorization, "Bearer ${getAdminUserToken()}")
             }
         }
-        val response = client.post("/messages/1") {
+        val response = client.post("/messages/$groupUUID") {
             contentType(ContentType.Application.Json)
             setBody("Best message ever")
         }

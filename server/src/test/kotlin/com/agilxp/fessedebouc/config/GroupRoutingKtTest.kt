@@ -1,12 +1,10 @@
 package com.agilxp.fessedebouc.config
 
-import com.agilxp.fessedebouc.container
+import com.agilxp.fessedebouc.*
 import com.agilxp.fessedebouc.db.Groups
 import com.agilxp.fessedebouc.db.UserGroups
 import com.agilxp.fessedebouc.db.Users
-import com.agilxp.fessedebouc.getAdminUserToken
 import com.agilxp.fessedebouc.model.GroupDTO
-import com.agilxp.fessedebouc.testModule
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -15,8 +13,8 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.testing.*
 import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.*
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
@@ -151,8 +149,8 @@ class GroupRoutingKtTest {
             testModule()
             transaction {
                 UserGroups.insert {
-                    it[userId] = EntityID(1, Users)
-                    it[groupId] = EntityID(1, Groups)
+                    it[userId] = EntityID(adminUUID, Users)
+                    it[groupId] = EntityID(groupUUID, Groups)
                     it[isAdmin] = true
                 }
             }
@@ -166,7 +164,7 @@ class GroupRoutingKtTest {
             }
         }
         val updateGroup = group1.copy(name = "Updated Group Name")
-        val response = client.put("/groups/1") {
+        val response = client.put("/groups/$groupUUID") {
             contentType(ContentType.Application.Json)
             setBody(updateGroup)
         }

@@ -2,23 +2,24 @@ package com.agilxp.fessedebouc.db
 
 import com.agilxp.fessedebouc.model.MessageDTO
 import com.agilxp.fessedebouc.util.KOffsetDateTimeSerializer
-import org.jetbrains.exposed.dao.IntEntity
-import org.jetbrains.exposed.dao.IntEntityClass
+import org.jetbrains.exposed.dao.UUIDEntity
+import org.jetbrains.exposed.dao.UUIDEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentTimestampWithTimeZone
 import org.jetbrains.exposed.sql.kotlin.datetime.timestampWithTimeZone
 import java.time.OffsetDateTime
+import java.util.*
 
-object Messages : IntIdTable("messages") {
+object Messages : UUIDTable("messages") {
     val content = text("content")
     val createdAt = timestampWithTimeZone("created_at").defaultExpression(CurrentTimestampWithTimeZone)
     val sender = reference("sender_id", Users)
     val group = reference("group_id", Groups)
 }
 
-class MessageDAO(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<MessageDAO>(Messages)
+class MessageDAO(id: EntityID<UUID>) : UUIDEntity(id) {
+    companion object : UUIDEntityClass<MessageDAO>(Messages)
 
     var content by Messages.content
     var createdAt by Messages.createdAt
@@ -34,7 +35,7 @@ class MessageDAO(id: EntityID<Int>) : IntEntity(id) {
 }
 
 data class Message(
-    val id: Int,
+    val id: UUID,
     val createdAt: OffsetDateTime,
     val content: String,
     val sender: User,

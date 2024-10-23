@@ -1,12 +1,10 @@
 package com.agilxp.fessedebouc.config
 
-import com.agilxp.fessedebouc.container
+import com.agilxp.fessedebouc.*
 import com.agilxp.fessedebouc.db.Groups
 import com.agilxp.fessedebouc.db.UserGroups
 import com.agilxp.fessedebouc.db.Users
-import com.agilxp.fessedebouc.getAdminUserToken
 import com.agilxp.fessedebouc.model.UserDTO
-import com.agilxp.fessedebouc.testModule
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -34,13 +32,13 @@ class UserRoutingKtTest {
             testModule()
             transaction {
                 UserGroups.insert {
-                    it[userId] = EntityID(1, Users)
-                    it[groupId] = EntityID(1, Groups)
+                    it[userId] = EntityID(adminUUID, Users)
+                    it[groupId] = EntityID(groupUUID, Groups)
                     it[isAdmin] = true
                 }
                 UserGroups.insert {
-                    it[userId] = EntityID(2, Users)
-                    it[groupId] = EntityID(1, Groups)
+                    it[userId] = EntityID(userUUID, Users)
+                    it[groupId] = EntityID(groupUUID, Groups)
                     it[isAdmin] = true
                 }
             }
@@ -65,8 +63,8 @@ class UserRoutingKtTest {
             testModule()
             transaction {
                 UserGroups.insert {
-                    it[userId] = EntityID(2, Users)
-                    it[groupId] = EntityID(1, Groups)
+                    it[userId] = EntityID(userUUID, Users)
+                    it[groupId] = EntityID(groupUUID, Groups)
                     it[isAdmin] = true
                 }
             }
@@ -79,7 +77,7 @@ class UserRoutingKtTest {
                 headers.append(HttpHeaders.Authorization, "Bearer ${getAdminUserToken()}")
             }
         }
-        val response = client.get("/users/1") {
+        val response = client.get("/users/$groupUUID") {
             contentType(ContentType.Application.Json)
         }
         assertEquals(HttpStatusCode.Unauthorized, response.status)
@@ -91,13 +89,13 @@ class UserRoutingKtTest {
             testModule()
             transaction {
                 UserGroups.insert {
-                    it[userId] = EntityID(1, Users)
-                    it[groupId] = EntityID(1, Groups)
+                    it[userId] = EntityID(adminUUID, Users)
+                    it[groupId] = EntityID(groupUUID, Groups)
                     it[isAdmin] = true
                 }
                 UserGroups.insert {
-                    it[userId] = EntityID(2, Users)
-                    it[groupId] = EntityID(1, Groups)
+                    it[userId] = EntityID(userUUID, Users)
+                    it[groupId] = EntityID(groupUUID, Groups)
                     it[isAdmin] = true
                 }
             }
@@ -110,7 +108,7 @@ class UserRoutingKtTest {
                 headers.append(HttpHeaders.Authorization, "Bearer ${getAdminUserToken()}")
             }
         }
-        val response = client.get("/users/1") {
+        val response = client.get("/users/$groupUUID") {
             contentType(ContentType.Application.Json)
         }
         assertEquals(HttpStatusCode.OK, response.status)

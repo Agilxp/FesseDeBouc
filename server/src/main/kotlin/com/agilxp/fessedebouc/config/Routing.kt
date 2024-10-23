@@ -1,22 +1,24 @@
 package com.agilxp.fessedebouc.config
 
-import com.agilxp.fessedebouc.db.*
+import com.agilxp.fessedebouc.db.Group
+import com.agilxp.fessedebouc.db.RequestStatus
+import com.agilxp.fessedebouc.db.RequestType
+import com.agilxp.fessedebouc.db.User
 import com.agilxp.fessedebouc.model.*
 import com.agilxp.fessedebouc.repository.*
 import com.agilxp.fessedebouc.util.EmailUtils
-import io.ktor.http.HttpStatusCode
-import io.ktor.serialization.kotlinx.json.json
+import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
-import io.ktor.server.application.call
-import io.ktor.server.auth.authenticate
-import io.ktor.server.auth.jwt.JWTPrincipal
-import io.ktor.server.auth.principal
-import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
+import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.statuspages.*
-import io.ktor.server.request.receive
-import io.ktor.server.response.respond
+import io.ktor.server.request.*
+import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.jetbrains.exposed.exceptions.ExposedSQLException
+import java.util.*
 
 fun Application.configureRouting(
     groupRepository: GroupRepository,
@@ -38,6 +40,9 @@ fun Application.configureRouting(
         }
         exception<DuplicateException> { call, cause ->
             call.respond(HttpStatusCode.Conflict, cause.message)
+        }
+        exception<IllegalArgumentException> { call, cause ->
+            call.respond(HttpStatusCode.BadRequest, cause.message ?: "")
         }
     }
     routing {
@@ -68,7 +73,7 @@ fun Application.configureRouting(
                     route("/{groupId}") {
                         put {
                             val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
-                            val groupId = call.parameters["groupId"]?.toIntOrNull()
+                            val groupId = UUID.fromString(call.parameters["groupId"])
                             val groupToUpdate = call.receive<GroupDTO>()
                             if (groupId != null && isGroupAdmin(user, groupId, groupRepository)) {
                                 groupRepository.updateGroup(groupId, groupToUpdate)
@@ -80,8 +85,8 @@ fun Application.configureRouting(
                         route("/kick") {
                             delete("/{userId}") {
                                 val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
-                                val groupId = call.parameters["groupId"]?.toIntOrNull()
-                                val userId = call.parameters["userId"]?.toIntOrNull()
+                                val groupId = UUID.fromString(call.parameters["groupId"])
+                                val userId = UUID.fromString(call.parameters["userId"])
                                 if (groupId != null && userId != null && isGroupAdmin(user, groupId, groupRepository)) {
                                     groupRepository.removeUserFromGroup(groupId, userId)
                                     call.respond(HttpStatusCode.OK)
@@ -93,7 +98,7 @@ fun Application.configureRouting(
                         route("/request") {
                             post("/send") {
                                 val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
-                                val groupId = call.parameters["groupId"]?.toIntOrNull()
+                                val groupId = UUID.fromString(call.parameters["groupId"])
                                 if (groupId != null) {
                                     val group = groupRepository.getGroupById(groupId)
                                         ?: throw BadRequestException("Invalid group id")
@@ -131,7 +136,7 @@ fun Application.configureRouting(
                         route("/invite") {
                             post("/send") {
                                 val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
-                                val groupId = call.parameters["groupId"]?.toIntOrNull()
+                                val groupId = UUID.fromString(call.parameters["groupId"])
                                 if (groupId != null && isGroupAdmin(user, groupId, groupRepository)) {
                                     val group = groupRepository.getGroupById(groupId)
                                         ?: throw BadRequestException("Invalid group id")
@@ -156,8 +161,8 @@ fun Application.configureRouting(
                             route("/{invitationId}") {
                                 get("/{action}") {
                                     val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
-                                    val groupId = call.parameters["groupId"]?.toIntOrNull()
-                                    val invitationId = call.parameters["invitationId"]?.toIntOrNull()
+                                    val groupId = UUID.fromString(call.parameters["groupId"])
+                                    val invitationId = UUID.fromString(call.parameters["invitationId"])
                                     val action = call.parameters["action"] ?: throw BadRequestException("Invalid URL")
                                     if (invitationId != null && groupId != null && isGroupAdmin(
                                             user,
@@ -222,7 +227,7 @@ fun Application.configureRouting(
                 route("/messages") {
                     get("/{groupId}") {
                         val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
-                        val groupId = call.parameters["groupId"]?.toIntOrNull()
+                        val groupId = UUID.fromString(call.parameters["groupId"])
                         if (groupId != null) {
                             val group = isUserInGroup(user, groupId, groupRepository)
                             val messages = messageRepository.getMessagesForGroup(group)
@@ -233,7 +238,7 @@ fun Application.configureRouting(
                     }
                     post("/{groupId}") {
                         val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
-                        val groupId = call.parameters["groupId"]?.toIntOrNull()
+                        val groupId = UUID.fromString(call.parameters["groupId"])
                         if (groupId != null) {
                             val group = isUserInGroup(user, groupId, groupRepository)
                             val message = call.receive<String>()
@@ -250,8 +255,7 @@ fun Application.configureRouting(
                 route("/users") {
                     get("/{groupId}") {
                         val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
-                        val groupId =
-                            call.parameters["groupId"]?.toIntOrNull() ?: throw BadRequestException("Invalid group id")
+                        val groupId = UUID.fromString(call.parameters["groupId"])
                         val group = isUserInGroup(user, groupId, groupRepository)
                         val users = group.users.map { it.toDto() }
                         call.respond(users)
@@ -261,7 +265,7 @@ fun Application.configureRouting(
                     route("/group") {
                         get("/{groupId}") {
                             val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
-                            val groupId = call.parameters["groupId"]?.toIntOrNull()
+                            val groupId = UUID.fromString(call.parameters["groupId"])
                             if (groupId != null) {
                                 val group = isUserInGroup(user, groupId, groupRepository)
                                 val events = eventRepository.getEventsForGroup(group).map { it.toDto() }
@@ -272,11 +276,11 @@ fun Application.configureRouting(
                         }
                         post("/{groupId}") {
                             val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
-                            val groupId = call.parameters["groupId"]?.toIntOrNull()
+                            val groupId = UUID.fromString(call.parameters["groupId"])
                             if (groupId != null) {
                                 val group = isUserInGroup(user, groupId, groupRepository)
                                 val event = call.receive<EventDTO>()
-                                eventRepository.createEvent(
+                                val newEvent = eventRepository.createEvent(
                                     event,
                                     user,
                                     group
@@ -290,7 +294,7 @@ fun Application.configureRouting(
                                         )
                                     }
                                 }
-                                call.respond(HttpStatusCode.Created)
+                                call.respond(HttpStatusCode.Created, newEvent.id.toString())
                             } else {
                                 throw BadRequestException("Group id missing")
                             }
@@ -300,7 +304,7 @@ fun Application.configureRouting(
                         route("/{eventId}") {
                             get("/{action}") {
                                 val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
-                                val eventId = call.parameters["eventId"]?.toIntOrNull()
+                                val eventId = UUID.fromString(call.parameters["eventId"])
                                 val action = call.parameters["action"]
                                 if (eventId != null && action != null) {
                                     val event = eventRepository.getEventById(eventId)
@@ -325,7 +329,7 @@ fun Application.configureRouting(
     }
 }
 
-suspend fun isUserInGroup(user: User, groupId: Int, groupRepository: GroupRepository): Group {
+suspend fun isUserInGroup(user: User, groupId: UUID, groupRepository: GroupRepository): Group {
     val group = groupRepository.getGroupById(groupId) ?: throw BadRequestException("Invalid group id")
     if (group.users.contains(user)) {
         return group
@@ -334,7 +338,7 @@ suspend fun isUserInGroup(user: User, groupId: Int, groupRepository: GroupReposi
     }
 }
 
-suspend fun isGroupAdmin(user: User, groupId: Int, groupRepository: GroupRepository): Boolean {
+suspend fun isGroupAdmin(user: User, groupId: UUID, groupRepository: GroupRepository): Boolean {
     val group = groupRepository.getGroupById(groupId) ?: throw BadRequestException("Invalid group id")
     if (group.admins.contains(user)) {
         return true
@@ -346,8 +350,9 @@ suspend fun isGroupAdmin(user: User, groupId: Int, groupRepository: GroupReposit
 suspend fun getInfoFromPrincipal(call: ApplicationCall, jwtConfig: JWTConfig, userRepository: UserRepository): User {
     val principal = call.principal<JWTPrincipal>(jwtConfig.name)
     if (principal != null) {
-        val userId: Int =
-            principal.payload.getClaim("user_id").asInt() ?: throw AuthenticationException("Invalid principal")
+        val userId: UUID =
+            UUID.fromString(principal.payload.getClaim("user_id").asString())
+                ?: throw AuthenticationException("Invalid principal")
         val email: String =
             principal.payload.getClaim("user_email").asString() ?: throw AuthenticationException("Invalid principal")
         val googleId: String =

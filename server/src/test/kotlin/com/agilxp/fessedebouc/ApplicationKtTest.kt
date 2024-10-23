@@ -22,6 +22,7 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.testcontainers.containers.PostgreSQLContainer
 import java.time.Clock
+import java.util.*
 import kotlin.test.Test
 
 class ApplicationKtTest {
@@ -112,16 +113,19 @@ fun Application.testModule() {
     val nonAdmin = getNonAdminUser()
     transaction {
         Users.insert {
+            it[id] = adminUUID
             it[name] = admin.name
             it[email] = admin.email
             it[google_id] = admin.googleId
         }
         Users.insert {
+            it[id] = userUUID
             it[name] = nonAdmin.name
             it[email] = nonAdmin.email
             it[google_id] = nonAdmin.googleId
         }
         Groups.insert {
+            it[id] = groupUUID
             it[name] = "My First Group"
             it[description] = "Best group ever"
         }
@@ -159,11 +163,17 @@ fun getAdminUserToken(): String {
     val adminUserToken = jwtConfig.createToken(
         clock = Clock.systemUTC(),
         accessToken = "access-token",
-        userId = 1,
+        userId = adminUUID,
         userEmail = admin.email,
         googleId = admin.googleId,
         expirationSeconds = 3600
     )
     return adminUserToken
 }
+
+val adminUUID = UUID.fromString("8520ecb4-2018-400c-82d8-1d945424601d")
+val userUUID = UUID.fromString("4070a4c8-d557-44f8-a686-1db7341f0191")
+val groupUUID = UUID.fromString("831c9741-18f4-4c4b-9384-429cb7103d17")
+val requestUUID = UUID.fromString("c0f2d9a6-9087-4efd-8e84-386466b19a0a")
+val invitationUUID = UUID.fromString("2fca37ed-79a0-45f7-bb61-d380ded7007a")
 

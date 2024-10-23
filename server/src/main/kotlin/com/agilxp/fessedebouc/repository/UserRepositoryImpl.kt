@@ -4,10 +4,11 @@ import com.agilxp.fessedebouc.config.suspendTransaction
 import com.agilxp.fessedebouc.db.User
 import com.agilxp.fessedebouc.db.UserDAO
 import com.agilxp.fessedebouc.db.Users
+import java.util.*
 
 class UserRepositoryImpl : UserRepository {
 
-    override suspend fun getUserById(id: Int): User? = suspendTransaction {
+    override suspend fun getUserById(id: UUID): User? = suspendTransaction {
         UserDAO.findById(id)?.toModel()
     }
 

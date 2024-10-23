@@ -1,7 +1,16 @@
 package com.agilxp.fessedebouc.model
 
-import io.ktor.server.auth.Principal
+import com.agilxp.fessedebouc.util.UUIDSerializer
+import io.ktor.server.auth.*
 import kotlinx.serialization.Serializable
+import java.util.*
 
 @Serializable
-data class UserSession(val state: String, val accessToken: String, val userId: Int, val userEmail: String, val googleId: String): Principal
+data class UserSession(
+    val state: String,
+    val accessToken: String,
+    @Serializable(with = UUIDSerializer::class)
+    val userId: UUID,
+    val userEmail: String,
+    val googleId: String
+) : Principal

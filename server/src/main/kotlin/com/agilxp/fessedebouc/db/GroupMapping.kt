@@ -1,22 +1,23 @@
 package com.agilxp.fessedebouc.db
 
 import com.agilxp.fessedebouc.model.GroupDTO
-import org.jetbrains.exposed.dao.IntEntity
-import org.jetbrains.exposed.dao.IntEntityClass
+import org.jetbrains.exposed.dao.UUIDEntity
+import org.jetbrains.exposed.dao.UUIDEntityClass
 import org.jetbrains.exposed.dao.entityCache
 import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.util.*
 import kotlin.reflect.KProperty
 
 
-object Groups : IntIdTable("groups") {
+object Groups : UUIDTable("groups") {
     val name = varchar("name", 255).uniqueIndex()
     val description = varchar("description", 255)
 }
 
-object UserGroups : IntIdTable("user_groups") {
+object UserGroups : UUIDTable("user_groups") {
     val userId = reference("user_id", Users, onDelete = ReferenceOption.CASCADE)
     val groupId = reference("group_id", Groups, onDelete = ReferenceOption.CASCADE)
     val isAdmin = bool("is_admin")
@@ -26,8 +27,8 @@ object UserGroups : IntIdTable("user_groups") {
     }
 }
 
-class GroupDAO(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<GroupDAO>(Groups)
+class GroupDAO(id: EntityID<UUID>) : UUIDEntity(id) {
+    companion object : UUIDEntityClass<GroupDAO>(Groups)
 
     var name by Groups.name
     var description by Groups.description
@@ -63,7 +64,7 @@ fun mapAdmin(o: GroupDAO, unused: KProperty<*>): SizedIterable<UserDAO> {
 }
 
 data class Group(
-    val id: Int,
+    val id: UUID,
     val name: String,
     val description: String,
     val users: List<User>,

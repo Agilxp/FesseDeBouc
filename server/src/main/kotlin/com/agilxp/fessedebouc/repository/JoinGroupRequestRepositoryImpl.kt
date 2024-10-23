@@ -2,12 +2,14 @@ package com.agilxp.fessedebouc.repository
 
 import com.agilxp.fessedebouc.config.suspendTransaction
 import com.agilxp.fessedebouc.db.*
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.update
+import java.util.*
 
 class JoinGroupRequestRepositoryImpl : JoinGroupRequestRepository {
 
     override suspend fun findByGroupEmailAndStatus(
-        groupId: Int,
+        groupId: UUID,
         inviteeEmail: String,
         statuses: List<RequestStatus>
     ): JoinGroupRequestDAO? = suspendTransaction {
@@ -16,7 +18,7 @@ class JoinGroupRequestRepositoryImpl : JoinGroupRequestRepository {
             .firstOrNull()
     }
 
-    override suspend fun findByIdAndGroup(requestId: Int, groupId: Int): JoinGroupRequestDAO?  = suspendTransaction {
+    override suspend fun findByIdAndGroup(requestId: UUID, groupId: UUID): JoinGroupRequestDAO?  = suspendTransaction {
         JoinGroupRequestDAO
             .find { (JoinGroupRequests.id eq requestId) and (JoinGroupRequests.group eq groupId) }
             .firstOrNull()
@@ -25,7 +27,7 @@ class JoinGroupRequestRepositoryImpl : JoinGroupRequestRepository {
     override suspend fun createRequest(
         inviteeEmail: String,
         requestType: RequestType,
-        groupId: Int
+        groupId: UUID
     ): JoinGroupRequestDAO = suspendTransaction {
         JoinGroupRequestDAO.new {
             email = inviteeEmail

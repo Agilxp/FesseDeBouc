@@ -1,10 +1,8 @@
 package com.agilxp.fessedebouc.config
 
-import com.agilxp.fessedebouc.container
+import com.agilxp.fessedebouc.*
 import com.agilxp.fessedebouc.db.*
-import com.agilxp.fessedebouc.getAdminUserToken
 import com.agilxp.fessedebouc.model.InvitationDTO
-import com.agilxp.fessedebouc.testModule
 import com.agilxp.fessedebouc.util.EmailUtils
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
@@ -18,8 +16,9 @@ import io.mockk.every
 import io.mockk.mockkObject
 import io.mockk.verify
 import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.*
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -55,7 +54,7 @@ class InvitationRoutingKtTest {
                 headers.append(HttpHeaders.Authorization, "Bearer ${getAdminUserToken()}")
             }
         }
-        val response = client.post("/groups/1/request/send") {
+        val response = client.post("/groups/$groupUUID/request/send") {
             contentType(ContentType.Application.Json)
         }
         assertEquals(HttpStatusCode.OK, response.status)
@@ -70,8 +69,8 @@ class InvitationRoutingKtTest {
             testModule()
             transaction {
                 UserGroups.insert {
-                    it[userId] = EntityID(1, Users)
-                    it[groupId] = EntityID(1, Groups)
+                    it[userId] = EntityID(adminUUID, Users)
+                    it[groupId] = EntityID(groupUUID, Groups)
                     it[isAdmin] = true
                 }
             }
@@ -84,7 +83,7 @@ class InvitationRoutingKtTest {
                 headers.append(HttpHeaders.Authorization, "Bearer ${getAdminUserToken()}")
             }
         }
-        val response = client.post("/groups/1/request/send") {
+        val response = client.post("/groups/$groupUUID/request/send") {
             contentType(ContentType.Application.Json)
         }
         assertEquals(HttpStatusCode.BadRequest, response.status)
@@ -97,13 +96,13 @@ class InvitationRoutingKtTest {
             testModule()
             transaction {
                 UserGroups.insert {
-                    it[userId] = EntityID(1, Users)
-                    it[groupId] = EntityID(1, Groups)
+                    it[userId] = EntityID(adminUUID, Users)
+                    it[groupId] = EntityID(groupUUID, Groups)
                     it[isAdmin] = true
                 }
                 UserGroups.insert {
-                    it[userId] = EntityID(2, Users)
-                    it[groupId] = EntityID(1, Groups)
+                    it[userId] = EntityID(userUUID, Users)
+                    it[groupId] = EntityID(groupUUID, Groups)
                     it[isAdmin] = false
                 }
                 assertEquals(2, UserGroups.selectAll().count())
@@ -117,7 +116,7 @@ class InvitationRoutingKtTest {
                 headers.append(HttpHeaders.Authorization, "Bearer ${getAdminUserToken()}")
             }
         }
-        val response = client.delete("/groups/1/kick/2") {
+        val response = client.delete("/groups/$groupUUID/kick/$userUUID") {
             contentType(ContentType.Application.Json)
         }
         assertEquals(HttpStatusCode.OK, response.status)
@@ -132,8 +131,8 @@ class InvitationRoutingKtTest {
             testModule()
             transaction {
                 UserGroups.insert {
-                    it[userId] = EntityID(1, Users)
-                    it[groupId] = EntityID(1, Groups)
+                    it[userId] = EntityID(adminUUID, Users)
+                    it[groupId] = EntityID(groupUUID, Groups)
                     it[isAdmin] = true
                 }
                 assertEquals(0, JoinGroupRequests.selectAll().count())
@@ -147,7 +146,7 @@ class InvitationRoutingKtTest {
                 headers.append(HttpHeaders.Authorization, "Bearer ${getAdminUserToken()}")
             }
         }
-        val response = client.post("/groups/1/invite/send") {
+        val response = client.post("/groups/$groupUUID/invite/send") {
             contentType(ContentType.Application.Json)
             setBody(InvitationDTO("dummy@example.com"))
         }
@@ -168,14 +167,15 @@ class InvitationRoutingKtTest {
             testModule()
             transaction {
                 UserGroups.insert {
-                    it[userId] = EntityID(1, Users)
-                    it[groupId] = EntityID(1, Groups)
+                    it[userId] = EntityID(adminUUID, Users)
+                    it[groupId] = EntityID(groupUUID, Groups)
                     it[isAdmin] = true
                 }
                 JoinGroupRequests.insert {
+                    it[id] = invitationUUID
                     it[email] = "user@example.com"
                     it[status] = RequestStatus.PENDING
-                    it[group] = EntityID(1, Groups)
+                    it[group] = EntityID(groupUUID, Groups)
                     it[type] = RequestType.REQUEST
                 }
                 val req = JoinGroupRequestDAO.all()
@@ -192,7 +192,7 @@ class InvitationRoutingKtTest {
                 headers.append(HttpHeaders.Authorization, "Bearer ${getAdminUserToken()}")
             }
         }
-        val response = client.get("/groups/1/invite/1/accept")
+        val response = client.get("/groups/$groupUUID/invite/$invitationUUID/accept")
         assertEquals(HttpStatusCode.OK, response.status)
         transaction {
             val req = JoinGroupRequestDAO.all()
@@ -210,14 +210,15 @@ class InvitationRoutingKtTest {
             testModule()
             transaction {
                 UserGroups.insert {
-                    it[userId] = EntityID(1, Users)
-                    it[groupId] = EntityID(1, Groups)
+                    it[userId] = EntityID(adminUUID, Users)
+                    it[groupId] = EntityID(groupUUID, Groups)
                     it[isAdmin] = true
                 }
                 JoinGroupRequests.insert {
+                    it[id] = invitationUUID
                     it[email] = "user@example.com"
                     it[status] = RequestStatus.PENDING
-                    it[group] = EntityID(1, Groups)
+                    it[group] = EntityID(groupUUID, Groups)
                     it[type] = RequestType.REQUEST
                 }
                 val req = JoinGroupRequestDAO.all()
@@ -234,7 +235,7 @@ class InvitationRoutingKtTest {
                 headers.append(HttpHeaders.Authorization, "Bearer ${getAdminUserToken()}")
             }
         }
-        val response = client.get("/groups/1/invite/1/deny")
+        val response = client.get("/groups/$groupUUID/invite/$invitationUUID/deny")
         assertEquals(HttpStatusCode.OK, response.status)
         transaction {
             val req = JoinGroupRequestDAO.all()

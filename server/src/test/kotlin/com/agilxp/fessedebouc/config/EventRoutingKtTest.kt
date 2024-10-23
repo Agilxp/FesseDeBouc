@@ -1,10 +1,11 @@
 package com.agilxp.fessedebouc.config
 
-import com.agilxp.fessedebouc.container
-import com.agilxp.fessedebouc.db.*
-import com.agilxp.fessedebouc.getAdminUserToken
+import com.agilxp.fessedebouc.*
+import com.agilxp.fessedebouc.db.EventDAO
+import com.agilxp.fessedebouc.db.Groups
+import com.agilxp.fessedebouc.db.UserGroups
+import com.agilxp.fessedebouc.db.Users
 import com.agilxp.fessedebouc.model.EventDTO
-import com.agilxp.fessedebouc.testModule
 import com.agilxp.fessedebouc.util.EmailUtils
 import com.agilxp.fessedebouc.util.KOffsetDateTimeSerializer
 import io.ktor.client.call.*
@@ -46,8 +47,8 @@ class EventRoutingKtTest {
             testModule()
             transaction {
                 UserGroups.insert {
-                    it[userId] = EntityID(2, Users)
-                    it[groupId] = EntityID(1, Groups)
+                    it[userId] = EntityID(userUUID, Users)
+                    it[groupId] = EntityID(groupUUID, Groups)
                     it[isAdmin] = true
                 }
             }
@@ -60,11 +61,11 @@ class EventRoutingKtTest {
                 headers.append(HttpHeaders.Authorization, "Bearer ${getAdminUserToken()}")
             }
         }
-        var response = client.get("/events/group/1") {
+        var response = client.get("/events/group/$groupUUID") {
             contentType(ContentType.Application.Json)
         }
         assertEquals(HttpStatusCode.Unauthorized, response.status)
-        response = client.post("/events/group/1") {
+        response = client.post("/events/group/$groupUUID") {
             contentType(ContentType.Application.Json)
         }
         assertEquals(HttpStatusCode.Unauthorized, response.status)
@@ -77,13 +78,13 @@ class EventRoutingKtTest {
             testModule()
             transaction {
                 UserGroups.insert {
-                    it[userId] = EntityID(1, Users)
-                    it[groupId] = EntityID(1, Groups)
+                    it[userId] = EntityID(adminUUID, Users)
+                    it[groupId] = EntityID(groupUUID, Groups)
                     it[isAdmin] = true
                 }
                 UserGroups.insert {
-                    it[userId] = EntityID(2, Users)
-                    it[groupId] = EntityID(1, Groups)
+                    it[userId] = EntityID(userUUID, Users)
+                    it[groupId] = EntityID(groupUUID, Groups)
                     it[isAdmin] = true
                 }
                 val events = EventDAO.all()
@@ -105,11 +106,12 @@ class EventRoutingKtTest {
             KOffsetDateTimeSerializer.serialize(OffsetDateTime.now().plusHours(2)),
             "My home"
         )
-        var response = client.post("/events/group/1") {
+        var response = client.post("/events/group/$groupUUID") {
             contentType(ContentType.Application.Json)
             setBody(event)
         }
         assertEquals(HttpStatusCode.Created, response.status)
+        val eventUUID = response.body<String>()
         transaction {
             val events = EventDAO.all()
             assertEquals(1, events.count())
@@ -120,7 +122,7 @@ class EventRoutingKtTest {
             assertEquals(0, e.maybe.count())
             assertEquals(0, e.accepted.count())
         }
-        response = client.get("/events/group/1") {
+        response = client.get("/events/group/$groupUUID") {
             contentType(ContentType.Application.Json)
         }
         assertEquals(HttpStatusCode.OK, response.status)
@@ -130,7 +132,7 @@ class EventRoutingKtTest {
         assertEquals(expectedStart, KOffsetDateTimeSerializer.deserialize(eventResponse.first().start).toInstant())
         verify(exactly = 1) { EmailUtils.sendEmail(any(), any(), any()) }
         confirmVerified(EmailUtils)
-        response = client.get("/events/reply/1/accept") {
+        response = client.get("/events/reply/$eventUUID/accept") {
             assertEquals(HttpStatusCode.OK, response.status)
         }
         transaction {
@@ -143,7 +145,7 @@ class EventRoutingKtTest {
             assertEquals(0, e.maybe.count())
             assertEquals(1, e.accepted.count())
         }
-        response = client.get("/events/reply/1/maybe") {
+        response = client.get("/events/reply/$eventUUID/maybe") {
             assertEquals(HttpStatusCode.OK, response.status)
         }
         transaction {
@@ -156,7 +158,7 @@ class EventRoutingKtTest {
             assertEquals(1, e.maybe.count())
             assertEquals(0, e.accepted.count())
         }
-        response = client.get("/events/reply/1/decline") {
+        response = client.get("/events/reply/$eventUUID/decline") {
             assertEquals(HttpStatusCode.OK, response.status)
         }
         transaction {

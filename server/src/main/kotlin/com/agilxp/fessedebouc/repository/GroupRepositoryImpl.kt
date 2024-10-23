@@ -6,10 +6,11 @@ import com.agilxp.fessedebouc.db.*
 import com.agilxp.fessedebouc.model.GroupDTO
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import java.util.*
 
 class GroupRepositoryImpl : GroupRepository {
 
-    override suspend fun getGroupById(id: Int): Group? = suspendTransaction {
+    override suspend fun getGroupById(id: UUID): Group? = suspendTransaction {
         GroupDAO.findById(id)?.toModel()
     }
 
@@ -25,7 +26,7 @@ class GroupRepositoryImpl : GroupRepository {
         newGroup.toModel()
     }
 
-    override suspend fun updateGroup(groupId: Int, group: GroupDTO): Group = suspendTransaction {
+    override suspend fun updateGroup(groupId: UUID, group: GroupDTO): Group = suspendTransaction {
         val existingGroup = GroupDAO.find { Groups.name eq group.name }.firstOrNull()
         if (existingGroup != null && groupId != existingGroup.id.value) {
             throw DuplicateException("Group name already in use")
@@ -46,8 +47,8 @@ class GroupRepositoryImpl : GroupRepository {
     }
 
     override suspend fun removeUserFromGroup(
-        groupId: Int,
-        userId: Int
+        groupId: UUID,
+        userId: UUID
     ): Unit = suspendTransaction {
         UserGroups.deleteWhere {
             (UserGroups.userId eq userId) and (UserGroups.groupId eq groupId)
