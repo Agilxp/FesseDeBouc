@@ -1,6 +1,9 @@
 package com.agilxp.fessedebouc.config
 
 import com.agilxp.fessedebouc.container
+import com.agilxp.fessedebouc.db.Groups
+import com.agilxp.fessedebouc.db.UserGroups
+import com.agilxp.fessedebouc.db.Users
 import com.agilxp.fessedebouc.getAdminUserToken
 import com.agilxp.fessedebouc.model.GroupDTO
 import com.agilxp.fessedebouc.testModule
@@ -11,12 +14,16 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.testing.*
+import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.*
 import kotlin.test.AfterTest
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 
 
-class RoutingKtTest {
+class GroupRoutingKtTest {
 
     @AfterTest
     fun tearDown() {
@@ -103,7 +110,7 @@ class RoutingKtTest {
         }
         var response = client.get("/groups/search?name=group")
         assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals(listOf(group1), response.body<List<GroupDTO>>())
+        assertContentEquals(listOf(existingGroup, group1), response.body<List<GroupDTO>>())
         response = client.get("/groups/search?name=not")
         assertEquals(HttpStatusCode.OK, response.status)
         assertEquals(emptyList(), response.body<List<GroupDTO>>())
@@ -111,6 +118,36 @@ class RoutingKtTest {
         assertEquals(HttpStatusCode.OK, response.status)
         assertEquals(emptyList(), response.body<List<GroupDTO>>())
     }
+
+    @Test
+    fun testUpdateGroup() = testApplication {
+        application {
+            testModule()
+            transaction {
+                UserGroups.insert {
+                    it[userId] = EntityID(1, Users)
+                    it[groupId] = EntityID(1, Groups)
+                    it[isAdmin] = true
+                }
+            }
+        }
+        val client = createClient {
+            install(ContentNegotiation) {
+                json()
+            }
+            defaultRequest {
+                headers.append(HttpHeaders.Authorization, "Bearer ${getAdminUserToken()}")
+            }
+        }
+        val updateGroup = group1.copy(name = "Updated Group Name")
+        val response = client.put("/groups/1") {
+            contentType(ContentType.Application.Json)
+            setBody(updateGroup)
+        }
+        assertEquals(HttpStatusCode.OK, response.status)
+    }
+
 }
 
 val group1 = GroupDTO("Group 1", "Best group ever")
+val existingGroup = GroupDTO("My First Group", "Best group ever")

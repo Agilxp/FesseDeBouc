@@ -120,7 +120,7 @@ fun Application.configureAuth(
                             UserSession(
                                 state,
                                 principal.accessToken,
-                                user.id.value,
+                                user.id,
                                 userInfo.email,
                                 userInfo.id
                             )
@@ -129,7 +129,7 @@ fun Application.configureAuth(
                             clock,
                             principal.accessToken,
                             principal.expiresIn,
-                            user.id.value,
+                            user.id,
                             userInfo.email,
                             userInfo.id
                         )

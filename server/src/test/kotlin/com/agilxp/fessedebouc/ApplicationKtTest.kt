@@ -2,6 +2,7 @@ package com.agilxp.fessedebouc
 
 import com.agilxp.fessedebouc.config.configureDatabases
 import com.agilxp.fessedebouc.config.configureRouting
+import com.agilxp.fessedebouc.db.Groups
 import com.agilxp.fessedebouc.db.Users
 import com.agilxp.fessedebouc.model.JWTConfig
 import com.agilxp.fessedebouc.model.UserDTO
@@ -28,6 +29,16 @@ class ApplicationKtTest {
     @Test
     fun testMainModule() = testApplication {
         application {
+            val dbConfig = environment.config.config("ktor.db").dbConfig()
+            container.withDatabaseName(dbConfig.url.split("/").last())
+            container.withUsername(dbConfig.username)
+            container.withPassword(dbConfig.password)
+            container.withReuse(true)
+            container.exposedPorts = listOf(5433)
+            container.portBindings = listOf("5433:5432")
+            if (!container.isRunning) {
+                container.start()
+            }
             module()
         }
     }
@@ -109,6 +120,10 @@ fun Application.testModule() {
             it[name] = nonAdmin.name
             it[email] = nonAdmin.email
             it[google_id] = nonAdmin.googleId
+        }
+        Groups.insert {
+            it[name] = "My First Group"
+            it[description] = "Best group ever"
         }
     }
     configureRouting(

@@ -8,6 +8,7 @@ import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentTimestampWithTimeZone
 import org.jetbrains.exposed.sql.kotlin.datetime.timestampWithTimeZone
+import java.time.OffsetDateTime
 
 object Messages : IntIdTable("messages") {
     val content = text("content")
@@ -24,5 +25,21 @@ class MessageDAO(id: EntityID<Int>) : IntEntity(id) {
     var sender by UserDAO referencedOn Messages.sender
     var group by GroupDAO referencedOn Messages.group
 
-    fun toDto() = MessageDTO(KOffsetDateTimeSerializer.serialize(createdAt), content, sender.toDTO())
+    fun toDto() = MessageDTO(KOffsetDateTimeSerializer.serialize(createdAt), content, sender.toDto())
+
+    fun toModel() = Message(
+        id = id.value,
+        createdAt = createdAt,
+        content = content,
+        sender = sender.toModel(),
+    )
+}
+
+data class Message(
+    val id: Int,
+    val createdAt: OffsetDateTime,
+    val content: String,
+    val sender: User,
+) {
+    fun toDto() = MessageDTO(KOffsetDateTimeSerializer.serialize(createdAt), content, sender.toDto())
 }

@@ -9,11 +9,11 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 class GroupRepositoryImpl : GroupRepository {
 
-    override suspend fun getGroupById(id: Int): GroupDAO? = suspendTransaction {
-        GroupDAO.findById(id)
+    override suspend fun getGroupById(id: Int): Group? = suspendTransaction {
+        GroupDAO.findById(id)?.toModel()
     }
 
-    override suspend fun createGroup(group: GroupDTO): GroupDAO = suspendTransaction {
+    override suspend fun createGroup(group: GroupDTO): Group = suspendTransaction {
         val existingGroup = GroupDAO.find { Groups.name eq group.name }.firstOrNull()
         if (existingGroup != null) {
             throw DuplicateException("Group already exists")
@@ -22,10 +22,10 @@ class GroupRepositoryImpl : GroupRepository {
             name = group.name
             description = group.description ?: ""
         }
-        newGroup
+        newGroup.toModel()
     }
 
-    override suspend fun updateGroup(groupId: Int, group: GroupDTO): GroupDAO = suspendTransaction {
+    override suspend fun updateGroup(groupId: Int, group: GroupDTO): Group = suspendTransaction {
         val existingGroup = GroupDAO.find { Groups.name eq group.name }.firstOrNull()
         if (existingGroup != null && groupId != existingGroup.id.value) {
             throw DuplicateException("Group name already in use")
@@ -34,10 +34,10 @@ class GroupRepositoryImpl : GroupRepository {
             it[name] = group.name
             it[description] = group.description ?: ""
         }
-        GroupDAO[groupId]
+        GroupDAO[groupId].toModel()
     }
 
-    override suspend fun addUserToGroup(group: GroupDAO, user: UserDAO, admin: Boolean): Unit = suspendTransaction {
+    override suspend fun addUserToGroup(group: Group, user: User, admin: Boolean): Unit = suspendTransaction {
         UserGroups.insert {
             it[userId] = user.id
             it[groupId] = group.id
@@ -54,13 +54,13 @@ class GroupRepositoryImpl : GroupRepository {
         }
     }
 
-    override suspend fun getGroupsForUser(user: UserDAO): List<GroupDAO> = suspendTransaction {
+    override suspend fun getGroupsForUser(user: User): List<Group> = suspendTransaction {
         UserGroups.selectAll()
             .where { UserGroups.userId eq user.id }
-            .map { GroupDAO[it[UserGroups.groupId].value] }
+            .map { GroupDAO[it[UserGroups.groupId].value].toModel() }
     }
 
-    override suspend fun findByName(groupName: String): List<GroupDAO> = suspendTransaction {
-        GroupDAO.find { Groups.name.lowerCase() like "%${groupName.lowercase()}%" }.toList()
+    override suspend fun findByName(groupName: String): List<Group> = suspendTransaction {
+        GroupDAO.find { Groups.name.lowerCase() like "%${groupName.lowercase()}%" }.map { it.toModel() }
     }
 }

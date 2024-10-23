@@ -22,6 +22,7 @@ postgres = "42.7.2"
 jakarta-mail = "2.1.3"
 jakarta-mail-impl = "2.0.3"
 testcontainers-postgres = "1.20.2"
+mockk = "1.13.13"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -55,6 +56,7 @@ exposed-dao = { module = "org.jetbrains.exposed:exposed-dao", version.ref = "exp
 exposed-datetime = { module = "org.jetbrains.exposed:exposed-kotlin-datetime", version.ref = "exposed" }
 postgres = { module = "org.postgresql:postgresql", version.ref = "postgres" }
 testcontainers-postgres = { module = "org.testcontainers:postgresql", version.ref = "testcontainers-postgres" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 jakarta-mail-api = { module = "jakarta.mail:jakarta.mail-api", version.ref = "jakarta-mail" }
 jakarta-mail-impl = { module = "org.eclipse.angus:jakarta.mail", version.ref = "jakarta-mail-impl" }
 

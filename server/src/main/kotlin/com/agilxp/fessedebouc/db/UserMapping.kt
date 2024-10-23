@@ -19,5 +19,21 @@ class UserDAO(id: EntityID<Int>) : IntEntity(id) {
     var googleId by Users.google_id
     val groups by GroupDAO via UserGroups
 
-    fun toDTO(): UserDTO = UserDTO(name, email, googleId)
+    fun toDto(): UserDTO = UserDTO(name, email, googleId)
+
+    fun toModel() = User(
+        id = id.value,
+        name = name,
+        email = email,
+        googleId = googleId
+    )
+}
+
+data class User(
+    val id: Int,
+    val name: String,
+    val email: String,
+    val googleId: String,
+) {
+    fun toDto() = UserDTO(name, email, googleId)
 }
