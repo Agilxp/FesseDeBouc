@@ -15,7 +15,6 @@ data class JWTConfig(
 
 fun JWTConfig.createToken(
     clock: Clock,
-    accessToken: String,
     expirationSeconds: Long,
     userId: UUID,
     userEmail: String,
@@ -24,7 +23,6 @@ fun JWTConfig.createToken(
     JWT.create()
         .withAudience(this.audience)
         .withIssuer(this.issuer)
-        .withClaim("google_access_token", accessToken)
         .withClaim("google_id", googleId)
         .withClaim("user_id", userId.toString())
         .withClaim("user_email", userEmail)

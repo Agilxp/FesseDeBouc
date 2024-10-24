@@ -1,7 +1,10 @@
 package com.agilxp.fessedebouc.config
 
+import com.agilxp.fessedebouc.model.AuthResponse
 import com.agilxp.fessedebouc.model.JWTConfig
 import com.agilxp.fessedebouc.model.OAuthConfig
+import com.agilxp.fessedebouc.model.RefreshTokenRequest
+import com.agilxp.fessedebouc.model.RefreshTokenResponse
 import com.agilxp.fessedebouc.model.UserInfo
 import com.agilxp.fessedebouc.model.UserSession
 import com.agilxp.fessedebouc.model.createToken
@@ -20,11 +23,13 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.jwt.jwt
+import io.ktor.server.request.receive
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
 import kotlinx.serialization.json.Json
 import java.time.Clock
+import java.util.UUID
 
 val applicationHttpClient = HttpClient(CIO) {
     install(ContentNegotiation) {
@@ -40,6 +45,8 @@ val applicationHttpClient = HttpClient(CIO) {
     }
 }
 
+private val tokens = mutableMapOf<String, String>()
+
 fun Application.configureAuth(
     httpClient: HttpClient = applicationHttpClient,
     clock: Clock,
@@ -47,6 +54,11 @@ fun Application.configureAuth(
     oauthConfig: OAuthConfig,
     userRepository: UserRepository,
 ) {
+    val jwtVerifier = JWT
+        .require(Algorithm.HMAC256(jwtConfig.secret))
+        .withAudience(jwtConfig.audience)
+        .withIssuer(jwtConfig.issuer)
+        .build()
     install(Sessions) {
         cookie<UserSession>("user_session") {
             cookie.maxAgeInSeconds = 1800
@@ -68,15 +80,27 @@ fun Application.configureAuth(
         }
         jwt(jwtConfig.name) {
             realm = jwtConfig.realm
-            verifier(
-                JWT
-                    .require(Algorithm.HMAC256(jwtConfig.secret))
-                    .withAudience(jwtConfig.audience)
-                    .withIssuer(jwtConfig.issuer)
-                    .build()
-            )
+            verifier(jwtVerifier)
             validate { credential ->
-                if (credential.payload.audience.contains(jwtConfig.audience)) JWTPrincipal(credential.payload) else null
+                if (
+                    credential.payload.audience.contains(jwtConfig.audience)
+                    && credential.payload.getClaim("user_email").asString() != ""
+                    && credential.payload.getClaim("user_id").asString() != ""
+                    && credential.payload.getClaim("google_id").asString() != ""
+                ) {
+                    val user = userRepository.getUserByGoogleId(credential.payload.getClaim("google_id").asString())
+                    if (
+                        user != null
+                        && user.id.toString() == credential.payload.getClaim("user_id").asString()
+                        && user.email == credential.payload.getClaim("user_email").asString()
+                    ) {
+                        JWTPrincipal(credential.payload)
+                    } else {
+                        null
+                    }
+                } else {
+                    null
+                }
             }
             challenge { scheme, realm ->
                 call.respond(
@@ -105,7 +129,6 @@ fun Application.configureAuth(
         authenticate(oauthConfig.name) {
             get("/login") {
                 // Redirects to 'authorizeUrl' automatically
-                // call.respondRedirect("/auth/oauth/google")
             }
             get("/callback") {
                 val currentPrincipal: OAuthAccessTokenResponse.OAuth2? = call.principal()
@@ -125,15 +148,22 @@ fun Application.configureAuth(
                                 userInfo.id
                             )
                         )
-                        val jwtToken = jwtConfig.createToken(
+                        val accessToken = jwtConfig.createToken(
                             clock,
-                            principal.accessToken,
                             principal.expiresIn,
                             user.id,
                             userInfo.email,
                             userInfo.id
                         )
-                        call.respondText(jwtToken, contentType = ContentType.Text.Plain)
+                        val refreshToken = jwtConfig.createToken(
+                            clock,
+                            86400, // 24 hours
+                            user.id,
+                            userInfo.email,
+                            userInfo.id
+                        )
+                        tokens[refreshToken] = user.id.toString()
+                        call.respond(HttpStatusCode.OK, AuthResponse(accessToken, refreshToken))
                     }
                 }
             }
@@ -141,6 +171,28 @@ fun Application.configureAuth(
         get("/logout") {
             call.sessions.clear<UserSession>()
             call.respondRedirect("/")
+        }
+        post("/oauth/refresh") {
+            val request = call.receive<RefreshTokenRequest>()
+            val refreshToken = request.refreshToken
+            val decodedJWT = jwtVerifier.verify(refreshToken)
+            if (decodedJWT.audience.contains(jwtConfig.audience)) {
+                val userId = tokens[refreshToken] ?: throw AuthenticationException("Bad refresh token")
+                if (decodedJWT.claims["user_id"]?.asString() != userId) {
+                    throw AuthenticationException("Bad refresh token")
+                }
+                val user = userRepository.getUserById(UUID.fromString(userId)) ?: throw AuthenticationException("Bad refresh token")
+                val newAccessToken = jwtConfig.createToken(
+                    clock,
+                    3600,
+                    user.id,
+                    user.email,
+                    user.googleId
+                )
+                call.respond(HttpStatusCode.OK, RefreshTokenResponse(newAccessToken))
+            } else {
+                throw AuthenticationException("Bad refresh token")
+            }
         }
     }
 }
@@ -151,6 +203,6 @@ suspend fun getUserInfo(
     httpClient: HttpClient
 ): UserInfo = httpClient.get(oauthConfig.userInfoUrl) {
     headers {
-        append(HttpHeaders.Authorization, "Bearer ${accessToken}")
+        append(HttpHeaders.Authorization, "Bearer $accessToken")
     }
 }.body()

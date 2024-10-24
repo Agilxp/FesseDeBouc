@@ -1,7 +1,6 @@
 package com.agilxp.fessedebouc.model
 
 import com.agilxp.fessedebouc.util.UUIDSerializer
-import io.ktor.server.auth.*
 import kotlinx.serialization.Serializable
 import java.util.*
 
@@ -13,4 +12,4 @@ data class UserSession(
     val userId: UUID,
     val userEmail: String,
     val googleId: String
-) : Principal
+)

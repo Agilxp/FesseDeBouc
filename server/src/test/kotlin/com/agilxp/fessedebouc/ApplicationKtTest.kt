@@ -166,7 +166,6 @@ fun getAdminUserToken(): String {
     val admin = getAdminUser()
     val adminUserToken = jwtConfig.createToken(
         clock = Clock.systemUTC(),
-        accessToken = "access-token",
         userId = adminUUID,
         userEmail = admin.email,
         googleId = admin.googleId,
