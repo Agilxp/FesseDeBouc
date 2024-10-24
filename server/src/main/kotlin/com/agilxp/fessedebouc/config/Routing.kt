@@ -8,6 +8,9 @@ import com.agilxp.fessedebouc.model.*
 import com.agilxp.fessedebouc.repository.*
 import com.agilxp.fessedebouc.util.EmailUtils
 import io.ktor.http.*
+import io.ktor.http.content.PartData
+import io.ktor.http.content.forEachPart
+import io.ktor.http.content.streamProvider
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -19,7 +22,10 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import java.util.*
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
+@OptIn(ExperimentalEncodingApi::class)
 fun Application.configureRouting(
     groupRepository: GroupRepository,
     userRepository: UserRepository,
@@ -241,12 +247,37 @@ fun Application.configureRouting(
                         val groupId = UUID.fromString(call.parameters["groupId"])
                         if (groupId != null) {
                             val group = isUserInGroup(user, groupId, groupRepository)
-                            val message = call.receive<PostMessageDTO>()
-                            if (message.isEmpty()) {
-                                throw BadRequestException("Message cannot be empty")
+                            val multipart = call.receiveMultipart()
+                            try {
+                                val message = PostMessageDTO()
+                                multipart.forEachPart { partData ->
+                                    when (partData) {
+                                        is PartData.FormItem -> {
+                                            //to read additional parameters that we sent with the image
+                                            if (partData.name == "content") {
+                                                message.content = partData.value
+                                            }
+                                        }
+
+                                        is PartData.FileItem -> {
+                                            message.document = Base64.encode(partData.streamProvider().readAllBytes())
+                                            message.documentFileName = partData.originalFileName
+                                            message.documentContentType = partData.contentType?.toString()
+                                        }
+
+                                        is PartData.BinaryItem -> Unit
+                                        else -> Unit
+                                    }
+                                }
+                                if (message.isEmpty()) {
+                                    throw BadRequestException("Message cannot be empty")
+                                }
+                                messageRepository.addMessageToGroup(message, user, group)
+                                call.respond(HttpStatusCode.Created)
+                            } catch (e: Exception) {
+                                this@configureRouting.log.error("Exception when receiving multipart data: ${e.message}")
+                                call.respond(HttpStatusCode.InternalServerError, "Error")
                             }
-                            messageRepository.addMessageToGroup(message, user, group)
-                            call.respond(HttpStatusCode.Created)
                         } else {
                             throw BadRequestException("Group id missing")
                         }

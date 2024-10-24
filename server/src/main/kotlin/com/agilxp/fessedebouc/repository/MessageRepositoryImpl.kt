@@ -13,6 +13,8 @@ class MessageRepositoryImpl: MessageRepository {
         MessageDAO.new {
             content = message.content
             document = message.document
+            documentContentType = message.documentContentType
+            documentFileName = message.documentFileName
             sender = UserDAO[user.id]
             group = GroupDAO[groupToAddMessage.id]
         }

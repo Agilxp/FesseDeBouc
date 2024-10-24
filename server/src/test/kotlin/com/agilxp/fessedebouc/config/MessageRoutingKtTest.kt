@@ -9,6 +9,8 @@ import io.ktor.client.call.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
+import io.ktor.client.request.forms.formData
+import io.ktor.client.request.forms.submitFormWithBinaryData
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.testing.*
@@ -22,6 +24,7 @@ import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.test.AfterTest
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 
 @OptIn(ExperimentalEncodingApi::class)
@@ -149,10 +152,15 @@ class MessageRoutingKtTest {
                 headers.append(HttpHeaders.Authorization, "Bearer ${getAdminUserToken()}")
             }
         }
-        val postMessage = PostMessageDTO(content = "Best message ever")
-        val response = client.post("/messages/$groupUUID") {
-            contentType(ContentType.Application.Json)
-            setBody(postMessage)
+        val response = client.submitFormWithBinaryData(
+            "/messages/$groupUUID",
+            formData = formData {
+                append("content", "Best message ever")
+            }
+        ) {
+            onUpload { bytesSentTotal, contentLength ->
+                println("Sent $bytesSentTotal bytes from $contentLength")
+            }
         }
         assertEquals(HttpStatusCode.Created, response.status)
         transaction {
@@ -186,11 +194,20 @@ class MessageRoutingKtTest {
                 headers.append(HttpHeaders.Authorization, "Bearer ${getAdminUserToken()}")
             }
         }
-        val expected = this::class.java.getResource("application.conf")
-        val postMessage = PostMessageDTO(content = "Best message ever", document = Base64.encode(expected!!.readBytes()))
-        val response = client.post("/messages/$groupUUID") {
-            contentType(ContentType.Application.Json)
-            setBody(postMessage)
+        val expected = this::class.java.getResource("/application.conf")
+        val response = client.submitFormWithBinaryData(
+            "/messages/$groupUUID",
+            formData = formData {
+                append("content", "Best message ever")
+                append("document", expected!!.readBytes(), Headers.build {
+                    append(HttpHeaders.ContentType, "text/plain")
+                    append(HttpHeaders.ContentDisposition, "filename=application.conf")
+                })
+            }
+        ) {
+            onUpload { bytesSentTotal, contentLength ->
+                println("Sent $bytesSentTotal bytes from $contentLength")
+            }
         }
         assertEquals(HttpStatusCode.Created, response.status)
         transaction {
@@ -200,7 +217,9 @@ class MessageRoutingKtTest {
             assertEquals("Best message ever", myMessage.content)
             val f = File("tmp.conf")
             FileUtils.writeByteArrayToFile(f, Base64.decode(myMessage.document!!))
-            assertEquals(expected.readBytes(), f.readBytes())
+            assertContentEquals(expected!!.readBytes(), f.readBytes())
+            assertEquals("text/plain", myMessage.documentContentType)
+            assertEquals("application.conf", myMessage.documentFileName)
             assertEquals("admin", myMessage.sender.name)
             assertEquals("My First Group", myMessage.group.name)
         }
