@@ -15,6 +15,7 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
+import io.ktor.server.config.ApplicationConfig
 import io.ktor.server.response.*
 import io.ktor.server.sessions.*
 import io.ktor.server.testing.*
@@ -41,6 +42,9 @@ class ApplicationKtTest {
                 container.start()
             }
             module()
+        }
+        environment {
+            config = ApplicationConfig("application.conf")
         }
     }
 

@@ -14,6 +14,7 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import io.ktor.server.config.ApplicationConfig
 import io.ktor.server.testing.*
 import io.mockk.confirmVerified
 import io.mockk.every
@@ -43,6 +44,9 @@ class EventRoutingKtTest {
 
     @Test
     fun test401() = testApplication {
+        environment {
+            config = ApplicationConfig("application.conf")
+        }
         application {
             testModule()
             transaction {
@@ -74,6 +78,9 @@ class EventRoutingKtTest {
 
     @Test
     fun testSuccess() = testApplication {
+        environment {
+            config = ApplicationConfig("application.conf")
+        }
         application {
             testModule()
             transaction {

@@ -10,6 +10,7 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import io.ktor.server.config.ApplicationConfig
 import io.ktor.server.testing.*
 import io.mockk.confirmVerified
 import io.mockk.every
@@ -40,6 +41,9 @@ class InvitationRoutingKtTest {
 
     @Test
     fun testSendRequest() = testApplication {
+        environment {
+            config = ApplicationConfig("application.conf")
+        }
         application {
             testModule()
             transaction {
@@ -65,6 +69,9 @@ class InvitationRoutingKtTest {
 
     @Test
     fun testSendRequestAlreadyIn() = testApplication {
+        environment {
+            config = ApplicationConfig("application.conf")
+        }
         application {
             testModule()
             transaction {
@@ -92,6 +99,9 @@ class InvitationRoutingKtTest {
 
     @Test
     fun testKick() = testApplication {
+        environment {
+            config = ApplicationConfig("application.conf")
+        }
         application {
             testModule()
             transaction {
@@ -127,6 +137,9 @@ class InvitationRoutingKtTest {
 
     @Test
     fun testSendInvitation() = testApplication {
+        environment {
+            config = ApplicationConfig("application.conf")
+        }
         application {
             testModule()
             transaction {
@@ -163,6 +176,9 @@ class InvitationRoutingKtTest {
 
     @Test
     fun testAcceptInvitation() = testApplication {
+        environment {
+            config = ApplicationConfig("application.conf")
+        }
         application {
             testModule()
             transaction {
@@ -206,6 +222,9 @@ class InvitationRoutingKtTest {
 
     @Test
     fun testDenyInvitation() = testApplication {
+        environment {
+            config = ApplicationConfig("application.conf")
+        }
         application {
             testModule()
             transaction {

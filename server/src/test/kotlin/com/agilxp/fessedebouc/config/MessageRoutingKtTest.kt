@@ -13,6 +13,7 @@ import io.ktor.client.request.forms.formData
 import io.ktor.client.request.forms.submitFormWithBinaryData
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import io.ktor.server.config.ApplicationConfig
 import io.ktor.server.testing.*
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.insert
@@ -37,6 +38,9 @@ class MessageRoutingKtTest {
 
     @Test
     fun testNoMessages() = testApplication {
+        environment {
+            config = ApplicationConfig("application.conf")
+        }
         application {
             testModule()
             transaction {
@@ -64,6 +68,9 @@ class MessageRoutingKtTest {
 
     @Test
     fun testGetMessages() = testApplication {
+        environment {
+            config = ApplicationConfig("application.conf")
+        }
         application {
             testModule()
             transaction {
@@ -102,6 +109,9 @@ class MessageRoutingKtTest {
 
     @Test
     fun testGetMessagesNotInGroup() = testApplication {
+        environment {
+            config = ApplicationConfig("application.conf")
+        }
         application {
             testModule()
             transaction {
@@ -133,6 +143,9 @@ class MessageRoutingKtTest {
 
     @Test
     fun testPostMessage() = testApplication {
+        environment {
+            config = ApplicationConfig("application.conf")
+        }
         application {
             testModule()
             transaction {
@@ -175,6 +188,9 @@ class MessageRoutingKtTest {
 
     @Test
     fun testPostMessageWithImage() = testApplication {
+        environment {
+            config = ApplicationConfig("application.conf")
+        }
         application {
             testModule()
             transaction {

@@ -11,6 +11,7 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import io.ktor.server.config.ApplicationConfig
 import io.ktor.server.testing.*
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.insert
@@ -28,6 +29,9 @@ class UserRoutingKtTest {
 
     @Test
     fun testBadRequest() = testApplication {
+        environment {
+            config = ApplicationConfig("application.conf")
+        }
         application {
             testModule()
             transaction {
@@ -59,6 +63,9 @@ class UserRoutingKtTest {
 
     @Test
     fun testNotInGroup() = testApplication {
+        environment {
+            config = ApplicationConfig("application.conf")
+        }
         application {
             testModule()
             transaction {
@@ -85,6 +92,9 @@ class UserRoutingKtTest {
 
     @Test
     fun getUsers() = testApplication {
+        environment {
+            config = ApplicationConfig("application.conf")
+        }
         application {
             testModule()
             transaction {

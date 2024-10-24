@@ -20,6 +20,10 @@ import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.jvm.javaio.toInputStream
+import io.ktor.utils.io.readByte
+import io.ktor.utils.io.readByteArray
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import java.util.*
 import kotlin.io.encoding.Base64
@@ -260,7 +264,8 @@ fun Application.configureRouting(
                                         }
 
                                         is PartData.FileItem -> {
-                                            message.document = Base64.encode(partData.streamProvider().readAllBytes())
+                                            val channel: ByteReadChannel = partData.provider.invoke()
+                                            message.document = Base64.encode(channel.toInputStream().readAllBytes())
                                             message.documentFileName = partData.originalFileName
                                             message.documentContentType = partData.contentType?.toString()
                                         }
