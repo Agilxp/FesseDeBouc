@@ -49,7 +49,7 @@ class EventRoutingKtTest {
                 UserGroups.insert {
                     it[userId] = EntityID(userUUID, Users)
                     it[groupId] = EntityID(groupUUID, Groups)
-                    it[isAdmin] = true
+                    it[isAdmin] = false
                 }
             }
         }
@@ -85,7 +85,7 @@ class EventRoutingKtTest {
                 UserGroups.insert {
                     it[userId] = EntityID(userUUID, Users)
                     it[groupId] = EntityID(groupUUID, Groups)
-                    it[isAdmin] = true
+                    it[isAdmin] = false
                 }
                 val events = EventDAO.all()
                 assertEquals(0, events.count())
