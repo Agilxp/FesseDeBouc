@@ -25,8 +25,8 @@ import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.jwt.jwt
 import io.ktor.server.request.receive
 import io.ktor.server.response.*
+import io.ktor.server.response.respond
 import io.ktor.server.routing.*
-import io.ktor.server.sessions.*
 import kotlinx.serialization.json.Json
 import java.time.Clock
 import java.util.UUID
@@ -46,6 +46,7 @@ val applicationHttpClient = HttpClient(CIO) {
 }
 
 private val tokens = mutableMapOf<String, String>()
+private val exchange = mutableMapOf<String, AuthResponse>()
 
 fun Application.configureAuth(
     httpClient: HttpClient = applicationHttpClient,
@@ -59,25 +60,8 @@ fun Application.configureAuth(
         .withAudience(jwtConfig.audience)
         .withIssuer(jwtConfig.issuer)
         .build()
-    install(Sessions) {
-        cookie<UserSession>("user_session") {
-            cookie.maxAgeInSeconds = 1800
-            cookie.path = "/"
-        }
-    }
+    val redirects = mutableMapOf<String, String>()
     install(Authentication) {
-        session<UserSession>("auth-session") {
-            validate { session ->
-                if (session.accessToken.isNotBlank()) {
-                    session
-                } else {
-                    null
-                }
-            }
-            challenge {
-                call.respondRedirect("/login")
-            }
-        }
         jwt(jwtConfig.name) {
             realm = jwtConfig.realm
             verifier(jwtVerifier)
@@ -120,6 +104,11 @@ fun Application.configureAuth(
                     clientId = oauthConfig.clientId,
                     clientSecret = oauthConfig.clientSecret,
                     defaultScopes = oauthConfig.defaultScopes,
+                    onStateCreated = { call, state ->
+                        call.request.queryParameters["redirectUrl"]?.let {
+                            redirects[state] = it
+                        }
+                    }
                 )
             }
             client = httpClient
@@ -139,15 +128,6 @@ fun Application.configureAuth(
                         if (user == null) {
                             user = userRepository.createUser(userInfo.name, userInfo.email, userInfo.id)
                         }
-                        call.sessions.set(
-                            UserSession(
-                                state,
-                                principal.accessToken,
-                                user.id,
-                                userInfo.email,
-                                userInfo.id
-                            )
-                        )
                         val accessToken = jwtConfig.createToken(
                             clock,
                             principal.expiresIn,
@@ -163,35 +143,53 @@ fun Application.configureAuth(
                             userInfo.id
                         )
                         tokens[refreshToken] = user.id.toString()
-                        call.respond(HttpStatusCode.OK, AuthResponse(accessToken, refreshToken))
+                        val code = UUID.randomUUID().toString()
+                        exchange[code] = AuthResponse(accessToken, refreshToken)
+                        redirects[state]?.let { redirect ->
+                            var redirectUrl = redirect
+                            if (redirect.contains("?")) {
+                                redirectUrl += "&code=$code"
+                            } else {
+                                redirectUrl += "?code=$code"
+                            }
+                            call.respondRedirect(redirectUrl)
+                            return@get
+                        }
+                        call.respond(HttpStatusCode.OK)
                     }
                 }
             }
         }
         get("/logout") {
-            call.sessions.clear<UserSession>()
-            call.respondRedirect("/")
+            call.respond(HttpStatusCode.OK)
         }
-        post("/oauth/refresh") {
-            val request = call.receive<RefreshTokenRequest>()
-            val refreshToken = request.refreshToken
-            val decodedJWT = jwtVerifier.verify(refreshToken)
-            if (decodedJWT.audience.contains(jwtConfig.audience)) {
-                val userId = tokens[refreshToken] ?: throw AuthenticationException("Bad refresh token")
-                if (decodedJWT.claims["user_id"]?.asString() != userId) {
+        route("/oauth") {
+            get("/exchange") {
+                val code = call.request.queryParameters["code"]
+                val token: AuthResponse = exchange.remove(code) ?: throw BadRequestException("Bad exchange")
+                call.respond(HttpStatusCode.OK, token)
+            }
+            post("/refresh") {
+                val request = call.receive<RefreshTokenRequest>()
+                val refreshToken = request.refreshToken
+                val decodedJWT = jwtVerifier.verify(refreshToken)
+                if (decodedJWT.audience.contains(jwtConfig.audience)) {
+                    val userId = tokens[refreshToken] ?: throw AuthenticationException("Bad refresh token")
+                    if (decodedJWT.claims["user_id"]?.asString() != userId) {
+                        throw AuthenticationException("Bad refresh token")
+                    }
+                    val user = userRepository.getUserById(UUID.fromString(userId)) ?: throw AuthenticationException("Bad refresh token")
+                    val newAccessToken = jwtConfig.createToken(
+                        clock,
+                        3600,
+                        user.id,
+                        user.email,
+                        user.googleId
+                    )
+                    call.respond(HttpStatusCode.OK, RefreshTokenResponse(newAccessToken))
+                } else {
                     throw AuthenticationException("Bad refresh token")
                 }
-                val user = userRepository.getUserById(UUID.fromString(userId)) ?: throw AuthenticationException("Bad refresh token")
-                val newAccessToken = jwtConfig.createToken(
-                    clock,
-                    3600,
-                    user.id,
-                    user.email,
-                    user.googleId
-                )
-                call.respond(HttpStatusCode.OK, RefreshTokenResponse(newAccessToken))
-            } else {
-                throw AuthenticationException("Bad refresh token")
             }
         }
     }

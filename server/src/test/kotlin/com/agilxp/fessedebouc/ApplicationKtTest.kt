@@ -51,25 +51,7 @@ class ApplicationKtTest {
 }
 
 fun Application.configureTestAuth(jwtConfig: JWTConfig) {
-    install(Sessions) {
-        cookie<UserSession>("user_session") {
-            cookie.maxAgeInSeconds = 1800
-            cookie.path = "/"
-        }
-    }
     install(Authentication) {
-        session<UserSession>("auth-session") {
-            validate { session ->
-                if (session.accessToken.isNotBlank()) {
-                    session
-                } else {
-                    null
-                }
-            }
-            challenge {
-                call.respondRedirect("/login")
-            }
-        }
         jwt(jwtConfig.name) {
             realm = jwtConfig.realm
             verifier(

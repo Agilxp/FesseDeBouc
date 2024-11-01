@@ -1,4 +1,7 @@
 package com.agilxp.fessedebouc
 
-class ConficltException {
-}
+class BadRequestException(override val message: String): Exception()
+
+class ConflictException(override val message: String): Exception()
+
+class UnknownServerException(override val message: String): Exception()
