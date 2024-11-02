@@ -1,11 +1,17 @@
 package com.agilxp.fessedebouc
 
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.darwin.Darwin
-import io.ktor.client.plugins.auth.Auth
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.defaultRequest
-import io.ktor.serialization.kotlinx.json.json
+import com.agilxp.fessedebouc.model.RefreshTokenRequest
+import com.agilxp.fessedebouc.model.RefreshTokenResponse
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.engine.darwin.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.auth.*
+import io.ktor.client.plugins.auth.providers.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.request.*
+import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
 import platform.UIKit.UIDevice
 
 class IOSPlatform: PlatformClass() {
@@ -18,7 +24,25 @@ class IOSPlatform: PlatformClass() {
         }
         // OAuth client handling
         install(Auth) {
-            customAuthConfig
+            bearer {
+                refreshTokens {
+                    println("Refreshing token")
+                    val response = client.post("${baseUrl}/oauth/refresh") {
+                        contentType(ContentType.Application.Json)
+                        setBody(RefreshTokenRequest(bearerTokenStorage.last().refreshToken!!))
+                        markAsRefreshTokenRequest()
+                    }
+                    val refreshTokenInfo: RefreshTokenResponse = response.body()
+                    bearerTokenStorage.add(BearerTokens(refreshTokenInfo.accessToken, oldTokens?.refreshToken))
+                    bearerTokenStorage.last()
+                }
+                loadTokens {
+                    bearerTokenStorage.last()
+                }
+                sendWithoutRequest {
+                    it.url.host == hostname
+                }
+            }
         }
         // Install the response interceptor
         install(CustomerResponseHandlerPlugin)

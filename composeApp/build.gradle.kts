@@ -17,6 +17,7 @@ kotlin {
         moduleName = "composeApp"
         browser {
             val projectDirPath = project.projectDir.path
+            val rootDirPath = project.rootDir.path
             commonWebpackConfig {
                 outputFileName = "composeApp.js"
                 devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
@@ -24,6 +25,7 @@ kotlin {
                     static = (static ?: mutableListOf()).apply {
                         // Serve sources to debug inside browser
                         add(projectDirPath)
+                        add(rootDirPath)
                     }
                 }
             }
@@ -68,6 +70,7 @@ kotlin {
             implementation(libs.androidx.navigation.compose)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
+            implementation(libs.androidx.lifecycle.viewmodel.compose)
             implementation(projects.shared)
         }
         desktopMain.dependencies {

@@ -4,16 +4,14 @@ import com.agilxp.fessedebouc.*
 import com.agilxp.fessedebouc.db.*
 import com.agilxp.fessedebouc.db.UserGroups.groupId
 import com.agilxp.fessedebouc.model.MessageDTO
-import com.agilxp.fessedebouc.model.PostMessageDTO
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
-import io.ktor.client.request.forms.formData
-import io.ktor.client.request.forms.submitFormWithBinaryData
+import io.ktor.client.request.forms.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
-import io.ktor.server.config.ApplicationConfig
+import io.ktor.server.config.*
 import io.ktor.server.testing.*
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.insert
@@ -238,6 +236,8 @@ class MessageRoutingKtTest {
             assertEquals("application.conf", myMessage.documentFileName)
             assertEquals("admin", myMessage.sender.name)
             assertEquals("My First Group", myMessage.group.name)
+            // Cleanup
+            f.delete()
         }
     }
 }

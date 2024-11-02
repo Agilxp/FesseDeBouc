@@ -4,12 +4,9 @@ import com.agilxp.fessedebouc.ConflictException
 import com.agilxp.fessedebouc.UnknownServerException
 import com.agilxp.fessedebouc.getPlatform
 import com.agilxp.fessedebouc.model.GroupDTO
-import io.ktor.client.call.body
-import io.ktor.client.request.get
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
+import io.ktor.client.call.*
+import io.ktor.client.request.*
+import io.ktor.http.*
 import kotlin.coroutines.cancellation.CancellationException
 
 class GroupHttpClient {
@@ -17,7 +14,9 @@ class GroupHttpClient {
     companion object {
         @Throws(UnknownServerException::class, CancellationException::class)
         suspend fun getMyGroups(): List<GroupDTO> {
-            return getPlatform().client.get("/groups/mine").body<List<GroupDTO>>()
+            val response = getPlatform().client.get("/groups/mine")
+            println("Response in Group client: $response")
+            return response.body<List<GroupDTO>>()
         }
 
         @Throws(UnknownServerException::class, CancellationException::class)

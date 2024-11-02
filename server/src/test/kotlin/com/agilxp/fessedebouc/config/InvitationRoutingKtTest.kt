@@ -10,7 +10,7 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
-import io.ktor.server.config.ApplicationConfig
+import io.ktor.server.config.*
 import io.ktor.server.testing.*
 import io.mockk.confirmVerified
 import io.mockk.every
@@ -94,7 +94,7 @@ class InvitationRoutingKtTest {
             contentType(ContentType.Application.Json)
         }
         assertEquals(HttpStatusCode.BadRequest, response.status)
-        assertEquals("You are already in the group: My First Group.", response.body<String>())
+        assertEquals(SimpleMessageDTO("You are already in the group: My First Group."), response.body<SimpleMessageDTO>())
     }
 
     @Test

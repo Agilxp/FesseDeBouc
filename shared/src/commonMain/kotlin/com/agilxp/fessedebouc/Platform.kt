@@ -1,17 +1,10 @@
 package com.agilxp.fessedebouc
 
-import com.agilxp.fessedebouc.model.RefreshTokenRequest
-import com.agilxp.fessedebouc.model.RefreshTokenResponse
-import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.plugins.api.createClientPlugin
-import io.ktor.client.plugins.auth.providers.BearerAuthConfig
-import io.ktor.client.plugins.auth.providers.BearerTokens
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.http.ContentType
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.contentType
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.plugins.api.*
+import io.ktor.client.plugins.auth.providers.*
+import io.ktor.http.*
 
 interface Platform {
     val name: String
@@ -20,40 +13,46 @@ interface Platform {
 
 abstract class PlatformClass() : Platform {
     protected val bearerTokenStorage = mutableListOf<BearerTokens>()
+
     protected val CustomerResponseHandlerPlugin = createClientPlugin("CustomerResponseHandlerPlugin") {
         onResponse { response ->
             // Interceptor that throws exception when we get an HTTP error
             when (response.status) {
+                HttpStatusCode.OK, HttpStatusCode.Created, HttpStatusCode.Accepted -> return@onResponse
                 HttpStatusCode.BadRequest -> throw BadRequestException(response.body() ?: "Bad Request")
+                HttpStatusCode.Unauthorized -> throw UnauthorizedException(response.body() ?: "Bad Request")
                 HttpStatusCode.Conflict -> throw ConflictException(response.body() ?: "Conflict")
                 HttpStatusCode.InternalServerError -> throw UnknownServerException(
                     response.body() ?: "Internal Server Error"
                 )
+                else -> throw Exception("Unknown error")
             }
         }
     }
 
-    protected val customAuthConfig = BearerAuthConfig().apply {
-        refreshTokens {
-            val response = client.post("${baseUrl}/oauth/refresh") {
-                contentType(ContentType.Application.Json)
-                setBody(RefreshTokenRequest(bearerTokenStorage.last().refreshToken!!))
-                markAsRefreshTokenRequest()
-            }
-            val refreshTokenInfo: RefreshTokenResponse = response.body()
-            bearerTokenStorage.add(BearerTokens(refreshTokenInfo.accessToken, oldTokens?.refreshToken))
-            bearerTokenStorage.last()
-        }
-        loadTokens {
-            bearerTokenStorage.last()
-        }
-        sendWithoutRequest {
-            it.url.host == hostname && it.url.port == port
-        }
-    }
+//    protected val customAuthConfig = BearerAuthConfig().apply {
+//        refreshTokens {
+//            println("Refreshing token")
+//            val response = client.post("${baseUrl}/oauth/refresh") {
+//                contentType(ContentType.Application.Json)
+//                setBody(RefreshTokenRequest(bearerTokenStorage.last().refreshToken!!))
+//                markAsRefreshTokenRequest()
+//            }
+//            val refreshTokenInfo: RefreshTokenResponse = response.body()
+//            bearerTokenStorage.add(BearerTokens(refreshTokenInfo.accessToken, oldTokens?.refreshToken))
+//            bearerTokenStorage.last()
+//        }
+//        loadTokens {
+//            println("Loading tokens")
+//            bearerTokenStorage.last()
+//        }
+//        sendWithoutRequest {
+//            it.url.host == hostname
+//        }
+//    }
 
     private val scheme = "http"
-    private val hostname = "localhost"
+    protected val hostname = "localhost"
     private val port = 8080
 
     protected val baseUrl = "$scheme://$hostname:$port"

@@ -8,8 +8,7 @@ import com.agilxp.fessedebouc.model.*
 import com.agilxp.fessedebouc.repository.*
 import com.agilxp.fessedebouc.util.EmailUtils
 import io.ktor.http.*
-import io.ktor.http.content.PartData
-import io.ktor.http.content.forEachPart
+import io.ktor.http.content.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -19,8 +18,9 @@ import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.utils.io.ByteReadChannel
-import io.ktor.utils.io.jvm.javaio.toInputStream
+import io.ktor.utils.io.*
+import io.ktor.utils.io.jvm.javaio.*
+import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import java.util.*
 import kotlin.io.encoding.Base64
@@ -40,16 +40,16 @@ fun Application.configureRouting(
     }
     install(StatusPages) {
         exception<AuthenticationException> { call, cause ->
-            call.respond(HttpStatusCode.Unauthorized, cause.message)
+            call.respond(HttpStatusCode.Unauthorized, SimpleMessageDTO(cause.message))
         }
         exception<BadRequestException> { call, cause ->
-            call.respond(HttpStatusCode.BadRequest, cause.message)
+            call.respond(HttpStatusCode.BadRequest, SimpleMessageDTO(cause.message))
         }
         exception<DuplicateException> { call, cause ->
-            call.respond(HttpStatusCode.Conflict, cause.message)
+            call.respond(HttpStatusCode.Conflict, SimpleMessageDTO(cause.message))
         }
         exception<IllegalArgumentException> { call, cause ->
-            call.respond(HttpStatusCode.BadRequest, cause.message ?: "")
+            call.respond(HttpStatusCode.BadRequest, SimpleMessageDTO(cause.message ?: ""))
         }
     }
     routing {
@@ -404,3 +404,6 @@ data class AuthenticationException(override val message: String) : Exception()
 data class BadRequestException(override val message: String) : Exception()
 
 data class DuplicateException(override val message: String) : Exception()
+
+@Serializable
+data class SimpleMessageDTO(val message: String)

@@ -49,7 +49,6 @@ kotlin {
             implementation(libs.ktor.client.auth)
             implementation(libs.kotlinx.datetime)
             implementation(libs.androidx.lifecycle.runtime.compose)
-            implementation(libs.androidx.lifecycle.viewmodel.compose)
             implementation(libs.androidx.navigation.compose)
         }
         jvmMain.dependencies {
