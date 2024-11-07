@@ -86,7 +86,7 @@ fun Application.configureAuth(
             }
         }
         oauth(oauthConfig.name) {
-            urlProvider = { "http://localhost:8080/callback" }
+            urlProvider = { oauthConfig.redirectUrl }
             providerLookup = {
                 OAuthServerSettings.OAuth2ServerSettings(
                     name = oauthConfig.name,
