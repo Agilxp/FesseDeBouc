@@ -54,3 +54,4 @@ class IOSPlatform: PlatformClass() {
 }
 
 actual fun getPlatform(): Platform = IOSPlatform()
+actual fun isSmallScreen() = false

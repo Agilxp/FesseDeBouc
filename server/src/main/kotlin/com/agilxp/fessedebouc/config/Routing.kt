@@ -1,5 +1,6 @@
 package com.agilxp.fessedebouc.config
 
+import com.agilxp.fessedebouc.SimpleMessageDTO
 import com.agilxp.fessedebouc.db.Group
 import com.agilxp.fessedebouc.db.RequestStatus
 import com.agilxp.fessedebouc.db.RequestType
@@ -7,6 +8,7 @@ import com.agilxp.fessedebouc.db.User
 import com.agilxp.fessedebouc.model.*
 import com.agilxp.fessedebouc.repository.*
 import com.agilxp.fessedebouc.util.EmailUtils
+import com.auth0.jwt.exceptions.TokenExpiredException
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.serialization.kotlinx.json.*
@@ -20,7 +22,6 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.jvm.javaio.*
-import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import java.util.*
 import kotlin.io.encoding.Base64
@@ -50,6 +51,9 @@ fun Application.configureRouting(
         }
         exception<IllegalArgumentException> { call, cause ->
             call.respond(HttpStatusCode.BadRequest, SimpleMessageDTO(cause.message ?: ""))
+        }
+        exception<TokenExpiredException> { call, cause ->
+            call.respond(HttpStatusCode.Unauthorized, SimpleMessageDTO(cause.message ?: ""))
         }
     }
     routing {
@@ -404,6 +408,3 @@ data class AuthenticationException(override val message: String) : Exception()
 data class BadRequestException(override val message: String) : Exception()
 
 data class DuplicateException(override val message: String) : Exception()
-
-@Serializable
-data class SimpleMessageDTO(val message: String)

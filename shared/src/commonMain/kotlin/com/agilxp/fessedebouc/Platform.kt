@@ -5,6 +5,7 @@ import io.ktor.client.call.*
 import io.ktor.client.plugins.api.*
 import io.ktor.client.plugins.auth.providers.*
 import io.ktor.http.*
+import kotlinx.serialization.json.Json
 
 interface Platform {
     val name: String
@@ -18,38 +19,21 @@ abstract class PlatformClass() : Platform {
         onResponse { response ->
             // Interceptor that throws exception when we get an HTTP error
             when (response.status) {
-                HttpStatusCode.OK, HttpStatusCode.Created, HttpStatusCode.Accepted -> return@onResponse
-                HttpStatusCode.BadRequest -> throw BadRequestException(response.body() ?: "Bad Request")
-                HttpStatusCode.Unauthorized -> throw UnauthorizedException(response.body() ?: "Bad Request")
-                HttpStatusCode.Conflict -> throw ConflictException(response.body() ?: "Conflict")
-                HttpStatusCode.InternalServerError -> throw UnknownServerException(
-                    response.body() ?: "Internal Server Error"
+                // DO NOT INTERCEPT 401 OR THE REFRESHING OF TOKENS WILL FAIL
+                HttpStatusCode.BadRequest -> throw BadRequestException(
+                    Json.decodeFromString<SimpleMessageDTO>(response.body()).message ?: "Bad Request"
                 )
-                else -> throw Exception("Unknown error")
+
+                HttpStatusCode.Conflict -> throw ConflictException(
+                    Json.decodeFromString<SimpleMessageDTO>(response.body()).message ?: "Conflict"
+                )
+
+                HttpStatusCode.InternalServerError -> throw UnknownServerException(
+                    Json.decodeFromString<SimpleMessageDTO>(response.body()).message ?: "Internal Server Error"
+                )
             }
         }
     }
-
-//    protected val customAuthConfig = BearerAuthConfig().apply {
-//        refreshTokens {
-//            println("Refreshing token")
-//            val response = client.post("${baseUrl}/oauth/refresh") {
-//                contentType(ContentType.Application.Json)
-//                setBody(RefreshTokenRequest(bearerTokenStorage.last().refreshToken!!))
-//                markAsRefreshTokenRequest()
-//            }
-//            val refreshTokenInfo: RefreshTokenResponse = response.body()
-//            bearerTokenStorage.add(BearerTokens(refreshTokenInfo.accessToken, oldTokens?.refreshToken))
-//            bearerTokenStorage.last()
-//        }
-//        loadTokens {
-//            println("Loading tokens")
-//            bearerTokenStorage.last()
-//        }
-//        sendWithoutRequest {
-//            it.url.host == hostname
-//        }
-//    }
 
     private val scheme = "http"
     protected val hostname = "localhost"
@@ -59,3 +43,4 @@ abstract class PlatformClass() : Platform {
 }
 
 expect fun getPlatform(): Platform
+expect fun isSmallScreen(): Boolean

@@ -17,3 +17,13 @@ data class AuthResponse(
 data class RefreshTokenResponse(
     val accessToken: String,
 )
+
+@Serializable
+data class TokenData(
+    val aud: String,
+    val iss: String,
+    val google_id: String,
+    val user_id: String,
+    val user_email: String,
+    val exp: Long,
+)

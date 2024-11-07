@@ -1,9 +1,12 @@
 package com.agilxp.fessedebouc
 
-class BadRequestException(override val message: String): Exception()
+import kotlinx.serialization.Serializable
 
-class UnauthorizedException(override val message: String): Exception()
+class BadRequestException(override val message: String): Exception()
 
 class ConflictException(override val message: String): Exception()
 
 class UnknownServerException(override val message: String): Exception()
+
+@Serializable
+data class SimpleMessageDTO(val message: String)

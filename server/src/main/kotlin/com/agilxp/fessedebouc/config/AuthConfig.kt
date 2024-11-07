@@ -1,5 +1,6 @@
 package com.agilxp.fessedebouc.config
 
+import com.agilxp.fessedebouc.SimpleMessageDTO
 import com.agilxp.fessedebouc.model.*
 import com.agilxp.fessedebouc.repository.UserRepository
 import com.auth0.jwt.JWT

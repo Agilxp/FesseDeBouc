@@ -3,6 +3,7 @@ package com.agilxp.fessedebouc
 import com.agilxp.fessedebouc.model.AuthResponse
 import com.agilxp.fessedebouc.model.RefreshTokenRequest
 import com.agilxp.fessedebouc.model.RefreshTokenResponse
+import com.agilxp.fessedebouc.model.TokenData
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.js.*
@@ -14,7 +15,11 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.utils.io.core.*
+import kotlinx.browser.localStorage
 import kotlinx.browser.window
+import kotlinx.datetime.Clock
+import kotlinx.serialization.json.Json
+import org.w3c.dom.get
 import org.w3c.dom.url.URL
 
 class WasmPlatform : PlatformClass() {
@@ -36,23 +41,44 @@ class WasmPlatform : PlatformClass() {
                         setBody(RefreshTokenRequest(bearerTokenStorage.last().refreshToken!!))
                         markAsRefreshTokenRequest()
                     }
-                    val refreshTokenInfo: RefreshTokenResponse = response.body()
-                    bearerTokenStorage.add(BearerTokens(refreshTokenInfo.accessToken, oldTokens?.refreshToken))
-                    bearerTokenStorage.last()
+                    if (response.status.isSuccess()) {
+                        val refreshTokenInfo: RefreshTokenResponse = response.body()
+                        bearerTokenStorage.add(BearerTokens(refreshTokenInfo.accessToken, oldTokens?.refreshToken))
+                        localStorage.setItem("at", refreshTokenInfo.accessToken)
+                        bearerTokenStorage.last()
+                    } else {
+                        val code = URL(window.location.href).searchParams.get("code")
+                        if (code.isNullOrEmpty()) {
+                            window.location.href = "http://localhost:8080/login?redirectUrl=http://localhost:3000"
+                        }
+                        null
+                    }
                 }
                 loadTokens {
-                    println("Loading tokens")
+                    val accessToken = localStorage["at"]
+                    val refreshToken = localStorage["rt"]
                     val code = URL(window.location.href).searchParams.get("code")
-                    if (!code.isNullOrEmpty()) {
+                    if (isValidToken(accessToken) || isValidToken(refreshToken)) {
+                        bearerTokenStorage.add(BearerTokens(accessToken!!, refreshToken))
+                    } else if (!code.isNullOrEmpty()) {
                         val response = HttpClient(Js) {
                             install(ContentNegotiation) {
                                 json()
                             }
                         }.use { client -> client.get("$baseUrl/oauth/exchange?code=$code") }
-                        val auth = response.body<AuthResponse>()
-                        bearerTokenStorage.add(BearerTokens(auth.accessToken, auth.refreshToken))
+                        if (response.status.isSuccess()) {
+                            val auth = response.body<AuthResponse>()
+                            bearerTokenStorage.add(BearerTokens(auth.accessToken, auth.refreshToken))
+                            localStorage.setItem("at", auth.accessToken)
+                            localStorage.setItem("rt", auth.refreshToken)
+                            println("Have now ${bearerTokenStorage.size} tokens")
+                        }
+                        window.location.href = "http://localhost:3000"
                     } else if (bearerTokenStorage.size == 0) {
+                        println("No token and no code, login...")
                         window.location.href = "http://localhost:8080/login?redirectUrl=http://localhost:3000"
+                    } else {
+                        println("Looks like we are having an issue")
                     }
                     bearerTokenStorage.last()
                 }
@@ -70,4 +96,13 @@ class WasmPlatform : PlatformClass() {
     }
 }
 
+fun isValidToken(token: String?): Boolean {
+    if (token == null) {
+        return false
+    }
+    val parsedToken = Json.decodeFromString<TokenData>(window.atob(token.split('.')[1]))
+    return parsedToken.exp > Clock.System.now().toEpochMilliseconds() / 1000
+}
+
 actual fun getPlatform(): Platform = WasmPlatform()
+actual fun isSmallScreen() = false
