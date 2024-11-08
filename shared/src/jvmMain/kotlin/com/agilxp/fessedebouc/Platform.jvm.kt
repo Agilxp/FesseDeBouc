@@ -62,5 +62,3 @@ class JVMPlatform : PlatformClass() {
 }
 
 actual fun getPlatform(): Platform = JVMPlatform()
-
-actual fun isSmallScreen() = false

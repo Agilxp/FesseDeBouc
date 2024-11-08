@@ -49,7 +49,7 @@ class WasmPlatform : PlatformClass() {
                     } else {
                         val code = URL(window.location.href).searchParams.get("code")
                         if (code.isNullOrEmpty()) {
-                            window.location.href = "http://localhost:8080/login?redirectUrl=http://localhost:3000"
+                            window.location.href = "$baseUrl/login?redirectUrl=http://localhost:3000"
                         }
                         null
                     }
@@ -76,7 +76,7 @@ class WasmPlatform : PlatformClass() {
                         window.location.href = "http://localhost:3000"
                     } else if (bearerTokenStorage.size == 0) {
                         println("No token and no code, login...")
-                        window.location.href = "http://localhost:8080/login?redirectUrl=http://localhost:3000"
+                        window.location.href = "$baseUrl/login?redirectUrl=http://localhost:3000"
                     } else {
                         println("Looks like we are having an issue")
                     }
@@ -105,4 +105,3 @@ fun isValidToken(token: String?): Boolean {
 }
 
 actual fun getPlatform(): Platform = WasmPlatform()
-actual fun isSmallScreen() = false

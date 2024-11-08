@@ -35,12 +35,11 @@ abstract class PlatformClass() : Platform {
         }
     }
 
-    private val scheme = "http"
-    protected val hostname = "localhost"
-    private val port = 8080
+    private val scheme = "https"
+    protected val hostname = "fessedebouc.agilxp.com"
+    private val port = 443
 
     protected val baseUrl = "$scheme://$hostname:$port"
 }
 
 expect fun getPlatform(): Platform
-expect fun isSmallScreen(): Boolean

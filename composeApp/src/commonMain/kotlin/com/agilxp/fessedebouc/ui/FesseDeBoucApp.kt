@@ -33,13 +33,12 @@ fun FesseDeBoucApp(
         ) {
             composable(route = "Home") {
                 Row(
-                    modifier = Modifier.fillMaxSize().padding(2.dp).height(1.dp), // Don't know why but height is needed
+                    modifier = Modifier.fillMaxSize().height(1.dp), // Don't know why but height is needed
                 ) {
-                    GroupMenu()
-
-                    Column(Modifier.padding(16.dp).fillMaxSize()) {
-                        Text("Main window")
+                    Box(modifier = Modifier.fillMaxWidth(0.2f)) {
+                        GroupMenu()
                     }
+                    MainWindow()
                 }
             }
         }
