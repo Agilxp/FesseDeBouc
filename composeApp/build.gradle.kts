@@ -65,7 +65,7 @@ kotlin {
         commonMain.dependencies {
             implementation(compose.runtime)
             implementation(compose.foundation)
-            implementation(compose.material)
+            implementation(compose.material3)
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
@@ -75,7 +75,6 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodel.compose)
             implementation(libs.androidx.compose.ui)
             implementation(libs.composetheme)
-            implementation(libs.material3)
             implementation(projects.shared)
         }
         desktopMain.dependencies {
