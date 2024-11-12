@@ -11,7 +11,6 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 import kotlin.reflect.KProperty
 
-
 object Groups : UUIDTable("groups") {
     val name = varchar("name", 255).uniqueIndex()
     val description = varchar("description", 255)
@@ -45,7 +44,6 @@ class GroupDAO(id: EntityID<UUID>) : UUIDEntity(id) {
     )
 }
 
-
 fun mapAdmin(o: GroupDAO, unused: KProperty<*>): SizedIterable<UserDAO> {
     if (o.id._value == null) return emptySized()
     return transaction {
@@ -70,5 +68,5 @@ data class Group(
     val users: List<User>,
     val admins: List<User>
 ) {
-    fun toDto() = GroupDTO(name, description)
+    fun toDto() = GroupDTO(name, description, id.toString(), users.map { it.toDto() })
 }

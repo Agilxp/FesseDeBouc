@@ -55,3 +55,29 @@ Tables will be created or updated (only add column) when the application starts.
 Now the server is accessible from http://localhost:8080/
 
 After log in, you will get the access token from the callback endpoint that you can use as Bearer Token.
+
+## Deploy
+
+### Server
+
+- Build the server with `../gradlew distTar`.
+- Upload the tar file to the server
+  `scp -i ~/.ssh/ssh-key-2024-11-07.key server-1.0.0.tar ubuntu@fessedebouc.agilxp.com:.`.
+- Login to the server the unpack the tar `tar -xvf server-1.0.0.tar`.
+- Copy the content of `server-1.0.0` folder to `/opt/fessdebouc` with `cp -R server-1.0.0/* /opt/fessedebouc/`
+- Restart the server `sudo systemctl restart fessedebouc`. You might need to reload the service first
+  `sudo systemctl daemon-reload`
+
+That's it
+
+### WASM
+
+TODO
+
+### iOS
+
+TODO
+
+### Android
+
+TODO

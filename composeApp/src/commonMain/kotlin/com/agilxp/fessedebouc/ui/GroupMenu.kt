@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
+import androidx.compose.material.Card
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
@@ -14,7 +15,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -32,7 +32,7 @@ fun GroupMenu(
     val groupUiState by groupViewModel.uiState.collectAsState()
     var newGroupName by remember { mutableStateOf("") }
     Scaffold(
-        content = {
+        content = { innerPadding ->
             Column {
                 Text(
                     text = "Groups",
@@ -41,14 +41,21 @@ fun GroupMenu(
                     modifier = Modifier.padding(top = 32.dp, start = 6.dp).fillMaxWidth(),
                 )
 
-                Box(Modifier.fillMaxSize()) {
+                Box(Modifier.padding(innerPadding)) {
                     Column(
-                        modifier = Modifier.verticalScroll(scroll),
+                        modifier = Modifier.fillMaxSize().verticalScroll(scroll),
                     ) {
                         groupUiState.myGroups.forEach { group ->
                             Box(
                                 modifier = Modifier.fillMaxWidth().clickable { groupViewModel.selectGroup(group) }) {
-                                Text(text = group.name, fontSize = 18.sp)
+                                Card(
+                                    modifier = Modifier.padding(16.dp).fillMaxWidth()
+                                ) {
+                                    Column(Modifier.padding(12.dp)) {
+                                        Text(text = group.name, fontSize = 18.sp)
+                                        Text(text = "(${group.users.size} members)", fontSize = 8.sp)
+                                    }
+                                }
                             }
                         }
                     }
@@ -61,19 +68,27 @@ fun GroupMenu(
         },
         bottomBar = {
             Column(
-                modifier = Modifier.height(140.dp).fillMaxWidth(0.9f),
-                verticalArrangement = Arrangement.SpaceBetween,
-                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.height(180.dp).fillMaxWidth().padding(6.dp),
+                verticalArrangement = Arrangement.Bottom,
             ) {
                 if (groupUiState.errorMessage?.isNotEmpty() == true) {
                     Text(groupUiState.errorMessage!!, color = colors.error)
                 }
-                Text("New group name", fontSize = 18.sp, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
+                Text(
+                    "New group name",
+                    fontSize = 18.sp,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Start
+                )
                 TextField(
                     value = newGroupName,
+                    modifier = Modifier.fillMaxWidth(),
                     onValueChange = { newGroupName = it })
-                Button(modifier = Modifier, onClick = { groupViewModel.addGroup(newGroupName) }) {
-                    Text("Add Group")
+                Button(onClick = {
+                    groupViewModel.addGroup(newGroupName)
+                    newGroupName = ""
+                }) {
+                    Text("Create Group")
                 }
             }
         }

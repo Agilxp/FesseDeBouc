@@ -3,7 +3,10 @@ package com.agilxp.fessedebouc.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.agilxp.fessedebouc.httpclient.GroupHttpClient
+import com.agilxp.fessedebouc.httpclient.MessageHttpClient
 import com.agilxp.fessedebouc.model.GroupDTO
+import com.agilxp.fessedebouc.model.MessageDTO
+import com.agilxp.fessedebouc.model.PostMessageDTO
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -47,15 +50,38 @@ class GroupViewModel : ViewModel() {
     }
 
     fun selectGroup(group: GroupDTO) {
-        println("Selected group ${group.name}")
-        _uiState.update { currentState ->
-            currentState.copy(selectedGroup = group)
+        viewModelScope.launch(Dispatchers.Default) {
+            val groupMessages = MessageHttpClient.getGroupMessages(group)
+            _uiState.update { currentState ->
+                currentState.copy(
+                    selectedGroup = group,
+                    errorMessage = null,
+                    groupMessages = groupMessages.toMutableList()
+                )
+            }
         }
     }
+
+    fun sendMessage(message: PostMessageDTO) {
+        println("group: ${_uiState.value.selectedGroup} and message: ${message.isEmpty()}")
+        if (_uiState.value.selectedGroup != null && !message.isEmpty()) {
+            viewModelScope.launch(Dispatchers.Default) {
+                MessageHttpClient.postMessageToGroup(_uiState.value.selectedGroup!!, message)
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        errorMessage = null,
+                        groupMessages = MessageHttpClient.getGroupMessages(currentState.selectedGroup!!).toMutableList()
+                    )
+                }
+            }
+        }
+    }
+
 }
 
 data class GroupUiState(
     val myGroups: MutableList<GroupDTO> = mutableListOf(),
+    val groupMessages: MutableList<MessageDTO> = mutableListOf(),
     val errorMessage: String? = null,
     val selectedGroup: GroupDTO? = null
 )
