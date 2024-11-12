@@ -12,6 +12,9 @@ androidx-lifecycle = "2.8.3"
 androidx-material = "1.12.0"
 androidx-navigation = "2.8.0-alpha10"
 androidx-test-junit = "1.2.1"
+androidx-compose-ui = "1.7.5"
+composetheme = "1.2.0-alpha"
+material3 = "1.3.1"
 compose-plugin = "1.7.0"
 junit = "4.13.2"
 kotlin = "2.0.21"
@@ -41,6 +44,9 @@ androidx-lifecycle-viewmodel = { group = "org.jetbrains.androidx.lifecycle", nam
 androidx-lifecycle-runtime-compose = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
 androidx-navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "androidx-navigation" }
+androidx-compose-ui = { module = "androidx.compose.ui:ui", version.ref = "androidx-compose-ui" }
+composetheme = { module = "com.composables:composetheme", version.ref = "composetheme" }
+material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
 kotlinx-coroutines-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }

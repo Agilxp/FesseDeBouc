@@ -1,3 +1,5 @@
+
+import org.gradle.kotlin.dsl.compose
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
@@ -71,6 +73,9 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(libs.androidx.lifecycle.viewmodel.compose)
+            implementation(libs.androidx.compose.ui)
+            implementation(libs.composetheme)
+            implementation(libs.material3)
             implementation(projects.shared)
         }
         desktopMain.dependencies {

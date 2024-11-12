@@ -83,7 +83,8 @@ fun GroupMenu(
                 TextField(
                     value = newGroupName,
                     modifier = Modifier.fillMaxWidth(),
-                    onValueChange = { newGroupName = it })
+                    onValueChange = { newGroupName = it }
+                )
                 Button(onClick = {
                     groupViewModel.addGroup(newGroupName)
                     newGroupName = ""
