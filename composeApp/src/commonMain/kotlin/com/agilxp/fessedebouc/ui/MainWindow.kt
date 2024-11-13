@@ -10,16 +10,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.BottomNavigation
-import androidx.compose.material.BottomNavigationItem
-import androidx.compose.material.Button
-import androidx.compose.material.Icon
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Home
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -51,12 +51,12 @@ fun MainWindow(
     var selectedScreen by remember { mutableStateOf(BottomNavigationItems.CHAT) }
     Scaffold(
         bottomBar = {
-            BottomNavigation {
-                BottomNavigationItem(
+            NavigationBar {
+                NavigationBarItem(
                     selected = BottomNavigationItems.CHAT == selectedScreen,
                     icon = {
                         Icon(
-                            Icons.Default.Home,
+                            Icons.Default.Call,
                             contentDescription = BottomNavigationItems.CHAT.name
                         )
                     },
@@ -75,7 +75,7 @@ fun MainWindow(
                         }
                     },
                 )
-                BottomNavigationItem(
+                NavigationBarItem(
                     selected = BottomNavigationItems.EVENT == selectedScreen,
                     icon = {
                         Icon(
