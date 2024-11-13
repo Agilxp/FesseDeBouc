@@ -73,7 +73,6 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(libs.androidx.lifecycle.viewmodel.compose)
-            implementation(libs.androidx.compose.ui)
             implementation(libs.composetheme)
             implementation(projects.shared)
         }
