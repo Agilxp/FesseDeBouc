@@ -3,13 +3,14 @@ package com.agilxp.fessedebouc
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.api.*
-import io.ktor.client.plugins.auth.providers.*
+import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.http.*
 import kotlinx.serialization.json.Json
 
 interface Platform {
     val name: String
     val client: HttpClient
+    fun getUserEmail(): String
 }
 
 abstract class PlatformClass() : Platform {

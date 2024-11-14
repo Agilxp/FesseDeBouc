@@ -59,6 +59,10 @@ class JVMPlatform : PlatformClass() {
             url(baseUrl)
         }
     }
+
+    override fun getUserEmail(): String {
+        TODO("Not yet implemented")
+    }
 }
 
 actual fun getPlatform(): Platform = JVMPlatform()

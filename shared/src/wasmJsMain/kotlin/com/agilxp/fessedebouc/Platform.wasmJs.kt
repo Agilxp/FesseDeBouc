@@ -94,6 +94,15 @@ class WasmPlatform : PlatformClass() {
             url(baseUrl)
         }
     }
+
+    override fun getUserEmail(): String {
+        val accessToken = localStorage["at"]
+        if (accessToken.isNullOrEmpty()) {
+            return ""
+        }
+        val parsedToken = Json.decodeFromString<TokenData>(window.atob(accessToken.split('.')[1]))
+        return parsedToken.user_email
+    }
 }
 
 fun isValidToken(token: String?): Boolean {
