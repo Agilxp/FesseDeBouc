@@ -4,6 +4,7 @@ import com.agilxp.fessedebouc.ConflictException
 import com.agilxp.fessedebouc.UnknownServerException
 import com.agilxp.fessedebouc.getPlatform
 import com.agilxp.fessedebouc.model.GroupDTO
+import com.agilxp.fessedebouc.model.InvitationDTO
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
@@ -30,6 +31,19 @@ class GroupHttpClient {
                 contentType(ContentType.Application.Json)
                 setBody(group)
             }.body()
+        }
+
+        @Throws(UnknownServerException::class, ConflictException::class, CancellationException::class)
+        suspend fun sendInvitation(email: String, groupUUID: String?) {
+            if (groupUUID == null) {
+                throw Exception("No group ID")
+            }
+            println("Sending invitation (client)")
+            val response = getPlatform().client.post("/groups/$groupUUID/invite/send") {
+                contentType(ContentType.Application.Json)
+                setBody(InvitationDTO(email))
+            }
+            println("Response in Group client: $response")
         }
     }
 }

@@ -49,6 +49,22 @@ class GroupViewModel : ViewModel() {
         }
     }
 
+    fun sendInvitation(email: String) {
+        viewModelScope.launch(Dispatchers.Default) {
+            try {
+                println("Sending invitation (model)")
+                GroupHttpClient.sendInvitation(email, _uiState.value.selectedGroup?.id)
+                _uiState.update { currentState ->
+                    currentState.copy(invitationMessages = "Invitation send successfully to $email")
+                }
+            } catch (_: Exception) {
+                _uiState.update { currentState ->
+                    currentState.copy(invitationMessages = "Error sending invitation to $email")
+                }
+            }
+        }
+    }
+
     fun selectGroup(group: GroupDTO) {
         viewModelScope.launch(Dispatchers.Default) {
             val groupMessages = MessageHttpClient.getGroupMessages(group)
@@ -83,5 +99,6 @@ data class GroupUiState(
     val myGroups: MutableList<GroupDTO> = mutableListOf(),
     val groupMessages: MutableList<MessageDTO> = mutableListOf(),
     val errorMessage: String? = null,
-    val selectedGroup: GroupDTO? = null
+    val selectedGroup: GroupDTO? = null,
+    val invitationMessages: String? = null,
 )
