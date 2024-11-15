@@ -174,12 +174,7 @@ fun Application.configureRouting(
                                 val groupId = UUID.fromString(call.parameters["groupId"])
                                 val invitationId = UUID.fromString(call.parameters["invitationId"])
                                 val action = call.parameters["action"] ?: throw BadRequestException("Invalid URL")
-                                if (invitationId != null && groupId != null && isGroupAdmin(
-                                        user,
-                                        groupId,
-                                        groupRepository
-                                    )
-                                ) {
+                                if (invitationId != null && groupId != null) {
                                     val group = groupRepository.getGroupById(groupId)
                                         ?: throw BadRequestException("Invalid group id")
                                     val invitation = joinGroupRequestRepository.findByIdAndGroup(
@@ -187,43 +182,45 @@ fun Application.configureRouting(
                                         group.id,
                                     )
                                     if (invitation != null) {
-                                        if (invitation.status == RequestStatus.PENDING) {
-                                            var pastTenseAction = ""
-                                            var text = ""
-                                            when (action) {
-                                                "accept" -> {
-                                                    try {
-                                                        val u = userRepository.getUserByEmail(invitation.email)
-                                                            ?: throw BadRequestException("Invalid request to join group")
-                                                        groupRepository.addUserToGroup(group, u, false)
-                                                    } catch (e: ExposedSQLException) {
-                                                        println("Seems like this user is already in the group")
+                                        if(invitation.email == user.email) {
+                                            if (invitation.status == RequestStatus.PENDING) {
+                                                var pastTenseAction = ""
+                                                var text = ""
+                                                when (action) {
+                                                    "accept" -> {
+                                                        try {
+                                                            groupRepository.addUserToGroup(group, user, false)
+                                                        } catch (e: ExposedSQLException) {
+                                                            println("Seems like this user is already in the group")
+                                                        }
+                                                        joinGroupRequestRepository.acceptRequest(invitation)
+                                                        pastTenseAction = "accepted"
+                                                        text = "You can now access the group in the application."
                                                     }
-                                                    joinGroupRequestRepository.acceptRequest(invitation)
-                                                    pastTenseAction = "accepted"
-                                                    text = "You can now access the group in the application."
-                                                }
 
-                                                "deny" -> {
-                                                    joinGroupRequestRepository.declineRequest(invitation)
-                                                    pastTenseAction = "denied"
-                                                    text =
-                                                        "An admin has denied your request. You might need to contact them directly by other means to get an invitation."
-                                                }
+                                                    "deny" -> {
+                                                        joinGroupRequestRepository.declineRequest(invitation)
+                                                        pastTenseAction = "denied"
+                                                        text =
+                                                            "An admin has denied your request. You might need to contact them directly by other means to get an invitation."
+                                                    }
 
-                                                else -> throw BadRequestException("Invalid action")
+                                                    else -> throw BadRequestException("Invalid action")
+                                                }
+                                                EmailUtils.sendEmail(
+                                                    invitation.email,
+                                                    "Your request to join ${group.name} has been ${pastTenseAction}.",
+                                                    text
+                                                )
+                                                call.respond(HttpStatusCode.OK)
+                                            } else {
+                                                call.respond(
+                                                    HttpStatusCode.OK,
+                                                    "Invitation already ${invitation.status.name.lowercase()}"
+                                                )
                                             }
-                                            EmailUtils.sendEmail(
-                                                invitation.email,
-                                                "Your request to join ${group.name} has been ${pastTenseAction}.",
-                                                text
-                                            )
-                                            call.respond(HttpStatusCode.OK)
                                         } else {
-                                            call.respond(
-                                                HttpStatusCode.OK,
-                                                "Invitation already ${invitation.status.name.lowercase()}"
-                                            )
+                                            throw AuthenticationException("User email not matching invitation email")
                                         }
                                     } else {
                                         throw BadRequestException("Not a valid invitation to accept")

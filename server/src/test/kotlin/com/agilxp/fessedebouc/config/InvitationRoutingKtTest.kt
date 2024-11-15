@@ -55,7 +55,7 @@ class InvitationRoutingKtTest {
                 json()
             }
             defaultRequest {
-                headers.append(HttpHeaders.Authorization, "Bearer ${getAdminUserToken()}")
+                headers.append(HttpHeaders.Authorization, "Bearer ${getNonAdminUserToken()}")
             }
         }
         val response = client.post("/groups/$groupUUID/request/send") {
@@ -76,7 +76,7 @@ class InvitationRoutingKtTest {
             testModule()
             transaction {
                 UserGroups.insert {
-                    it[userId] = EntityID(adminUUID, Users)
+                    it[userId] = EntityID(userUUID, Users)
                     it[groupId] = EntityID(groupUUID, Groups)
                     it[isAdmin] = true
                 }
@@ -87,7 +87,7 @@ class InvitationRoutingKtTest {
                 json()
             }
             defaultRequest {
-                headers.append(HttpHeaders.Authorization, "Bearer ${getAdminUserToken()}")
+                headers.append(HttpHeaders.Authorization, "Bearer ${getNonAdminUserToken()}")
             }
         }
         val response = client.post("/groups/$groupUUID/request/send") {
@@ -205,7 +205,7 @@ class InvitationRoutingKtTest {
                 json()
             }
             defaultRequest {
-                headers.append(HttpHeaders.Authorization, "Bearer ${getAdminUserToken()}")
+                headers.append(HttpHeaders.Authorization, "Bearer ${getNonAdminUserToken()}")
             }
         }
         val response = client.get("/groups/$groupUUID/invite/$invitationUUID/accept")
@@ -251,7 +251,7 @@ class InvitationRoutingKtTest {
                 json()
             }
             defaultRequest {
-                headers.append(HttpHeaders.Authorization, "Bearer ${getAdminUserToken()}")
+                headers.append(HttpHeaders.Authorization, "Bearer ${getNonAdminUserToken()}")
             }
         }
         val response = client.get("/groups/$groupUUID/invite/$invitationUUID/deny")

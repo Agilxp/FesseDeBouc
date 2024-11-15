@@ -6,7 +6,6 @@ import com.agilxp.fessedebouc.db.Groups
 import com.agilxp.fessedebouc.db.Users
 import com.agilxp.fessedebouc.model.JWTConfig
 import com.agilxp.fessedebouc.model.UserDTO
-import com.agilxp.fessedebouc.model.UserSession
 import com.agilxp.fessedebouc.model.createToken
 import com.agilxp.fessedebouc.repository.*
 import com.auth0.jwt.JWT
@@ -15,9 +14,8 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
-import io.ktor.server.config.ApplicationConfig
+import io.ktor.server.config.*
 import io.ktor.server.response.*
-import io.ktor.server.sessions.*
 import io.ktor.server.testing.*
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -154,6 +152,18 @@ fun getAdminUserToken(): String {
         expirationSeconds = 3600
     )
     return adminUserToken
+}
+
+fun getNonAdminUserToken(): String {
+    val user = getNonAdminUser()
+    val userToken = jwtConfig.createToken(
+        clock = Clock.systemUTC(),
+        userId = userUUID,
+        userEmail = user.email,
+        googleId = user.googleId,
+        expirationSeconds = 3600
+    )
+    return userToken
 }
 
 val adminUUID = UUID.fromString("8520ecb4-2018-400c-82d8-1d945424601d")
