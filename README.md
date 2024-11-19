@@ -60,19 +60,21 @@ After log in, you will get the access token from the callback endpoint that you 
 
 ### Server
 
-- Build the server with `../gradlew distTar`.
+- Build the server with `./gradlew :server:installDist`.
 - Upload the tar file to the server
-  `scp -i ~/.ssh/ssh-key-2024-11-07.key server-1.0.0.tar ubuntu@fessedebouc.agilxp.com:.`.
-- Login to the server the unpack the tar `tar -xvf server-1.0.0.tar`.
-- Copy the content of `server-1.0.0` folder to `/opt/fessdebouc` with `cp -R server-1.0.0/* /opt/fessedebouc/`
-- Restart the server `sudo systemctl restart fessedebouc`. You might need to reload the service first
-  `sudo systemctl daemon-reload`
+  `scp -i ~/.ssh/ssh-key-2024-11-07.key -r server/build/install/server/* ubuntu@207.127.95.116:/opt/fessedebouc/`.
+- Restart the server `sudo systemctl restart fessedebouc`.
 
 That's it
 
 ### WASM
 
-TODO
+- Build with `./gradlew :composeApp:wasmJsBrowserDistribution`
+- Copy the content of `composeApp/build/dist/wasmJs/productionExecutable` to the folder where the web page will be
+  served from. F.ex.:
+```bash
+scp -i ~/.ssh/ssh-key-2024-11-07.key -r composeApp/build/dist/wasmJs/productionExecutable/* ubuntu@207.127.95.116:/var/www/html/
+```
 
 ### iOS
 

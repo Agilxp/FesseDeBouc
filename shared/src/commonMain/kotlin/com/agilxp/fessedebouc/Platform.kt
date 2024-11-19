@@ -3,7 +3,7 @@ package com.agilxp.fessedebouc
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.api.*
-import io.ktor.client.plugins.auth.providers.BearerTokens
+import io.ktor.client.plugins.auth.providers.*
 import io.ktor.http.*
 import kotlinx.serialization.json.Json
 
@@ -39,8 +39,11 @@ abstract class PlatformClass() : Platform {
     private val scheme = "https"
     protected val hostname = "fessedebouc.agilxp.com"
     private val port = 443
+    private val path = "/api/"
 
-    protected val baseUrl = "$scheme://$hostname:$port"
+    protected val baseUrl = "$scheme://$hostname:$port$path"
+//    protected val wasmUrl = "$scheme://$hostname:$port"
+    protected val wasmUrl = "http://localhost:3000"
 }
 
 expect fun getPlatform(): Platform

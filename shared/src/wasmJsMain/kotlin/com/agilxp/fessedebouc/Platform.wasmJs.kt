@@ -36,7 +36,7 @@ class WasmPlatform : PlatformClass() {
             bearer {
                 refreshTokens {
                     println("Refreshing token")
-                    val response = client.post("$baseUrl/oauth/refresh") {
+                    val response = client.post("${baseUrl}oauth/refresh") {
                         contentType(ContentType.Application.Json)
                         setBody(RefreshTokenRequest(bearerTokenStorage.last().refreshToken!!))
                         markAsRefreshTokenRequest()
@@ -49,7 +49,7 @@ class WasmPlatform : PlatformClass() {
                     } else {
                         val code = URL(window.location.href).searchParams.get("code")
                         if (code.isNullOrEmpty()) {
-                            window.location.href = "$baseUrl/login?redirectUrl=http://localhost:3000"
+                            window.location.href = "${baseUrl}login?redirectUrl=$wasmUrl"
                         }
                         null
                     }
@@ -65,7 +65,7 @@ class WasmPlatform : PlatformClass() {
                             install(ContentNegotiation) {
                                 json()
                             }
-                        }.use { client -> client.get("$baseUrl/oauth/exchange?code=$code") }
+                        }.use { client -> client.get("${baseUrl}oauth/exchange?code=$code") }
                         if (response.status.isSuccess()) {
                             val auth = response.body<AuthResponse>()
                             bearerTokenStorage.add(BearerTokens(auth.accessToken, auth.refreshToken))
@@ -73,10 +73,10 @@ class WasmPlatform : PlatformClass() {
                             localStorage.setItem("rt", auth.refreshToken)
                             println("Have now ${bearerTokenStorage.size} tokens")
                         }
-                        window.location.href = "http://localhost:3000"
+                        window.location.href = wasmUrl
                     } else if (bearerTokenStorage.size == 0) {
                         println("No token and no code, login...")
-                        window.location.href = "$baseUrl/login?redirectUrl=http://localhost:3000"
+                        window.location.href = "${baseUrl}login?redirectUrl=$wasmUrl"
                     } else {
                         println("Looks like we are having an issue")
                     }

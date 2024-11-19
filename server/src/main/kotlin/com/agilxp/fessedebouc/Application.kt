@@ -9,7 +9,7 @@ import com.agilxp.fessedebouc.model.OAuthConfig
 import com.agilxp.fessedebouc.repository.*
 import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.config.ApplicationConfig
+import io.ktor.server.config.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.cors.routing.*
 import java.time.Clock
@@ -18,10 +18,13 @@ fun main(args: Array<String>): Unit = EngineMain.main(args)
 
 fun Application.module() {
     install(CORS) {
-        allowHost("localhost:3000")
+        allowHost("localhost")
+        allowHost("127.0.0.1")
+        allowSameOrigin = true
         allowMethod(HttpMethod.Delete)
         allowMethod(HttpMethod.Options)
         allowMethod(HttpMethod.Put)
+        allowCredentials = true
         allowHeader(HttpHeaders.ContentType)
         allowHeader(HttpHeaders.Authorization)
     }

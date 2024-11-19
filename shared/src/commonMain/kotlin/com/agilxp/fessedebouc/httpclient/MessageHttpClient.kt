@@ -7,10 +7,9 @@ import com.agilxp.fessedebouc.model.GroupDTO
 import com.agilxp.fessedebouc.model.MessageDTO
 import com.agilxp.fessedebouc.model.PostMessageDTO
 import io.ktor.client.call.*
-import io.ktor.client.plugins.onUpload
+import io.ktor.client.plugins.*
 import io.ktor.client.request.*
-import io.ktor.client.request.forms.formData
-import io.ktor.client.request.forms.submitFormWithBinaryData
+import io.ktor.client.request.forms.*
 import kotlin.coroutines.cancellation.CancellationException
 
 class MessageHttpClient {
@@ -18,7 +17,7 @@ class MessageHttpClient {
     companion object {
         @Throws(UnknownServerException::class, CancellationException::class)
         suspend fun getGroupMessages(group: GroupDTO): List<MessageDTO> {
-            val response = getPlatform().client.get("/messages/${group.id}")
+            val response = getPlatform().client.get("messages/${group.id}")
             println("Response in Group client: $response")
             return response.body<List<MessageDTO>>()
         }
@@ -30,7 +29,7 @@ class MessageHttpClient {
             }
             println("message: $message")
             getPlatform().client.submitFormWithBinaryData(
-                "/messages/${group.id}",
+                "messages/${group.id}",
                 formData = formData {
                     append("content", message.content!!)
                 }

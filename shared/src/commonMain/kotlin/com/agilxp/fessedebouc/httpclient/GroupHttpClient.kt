@@ -15,19 +15,19 @@ class GroupHttpClient {
     companion object {
         @Throws(UnknownServerException::class, CancellationException::class)
         suspend fun getMyGroups(): List<GroupDTO> {
-            val response = getPlatform().client.get("/groups/mine")
+            val response = getPlatform().client.get("groups/mine")
             println("Response in Group client: $response")
             return response.body<List<GroupDTO>>()
         }
 
         @Throws(UnknownServerException::class, CancellationException::class)
         suspend fun searchGroup(searchQuery: String): List<GroupDTO> {
-            return getPlatform().client.get("/groups/search?name=$searchQuery").body<List<GroupDTO>>()
+            return getPlatform().client.get("groups/search?name=$searchQuery").body<List<GroupDTO>>()
         }
 
         @Throws(UnknownServerException::class, ConflictException::class, CancellationException::class)
         suspend fun createGroup(group: GroupDTO): GroupDTO {
-            return getPlatform().client.post("/groups") {
+            return getPlatform().client.post("groups") {
                 contentType(ContentType.Application.Json)
                 setBody(group)
             }.body()
@@ -39,7 +39,7 @@ class GroupHttpClient {
                 throw Exception("No group ID")
             }
             println("Sending invitation (client)")
-            val response = getPlatform().client.post("/groups/$groupUUID/invite/send") {
+            val response = getPlatform().client.post("groups/$groupUUID/invite/send") {
                 contentType(ContentType.Application.Json)
                 setBody(InvitationDTO(email))
             }
