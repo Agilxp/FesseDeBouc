@@ -35,7 +35,7 @@
                     localStorage.setItem("at", auth.accessToken)
                     localStorage.setItem("rt", auth.refreshToken)
                 }
-                window.location.replace("http://localhost:3000");
+                window.location.replace("https://fessedebouc.agilxp.com");
             })
             .catch((reason) => {
                 console.log(reason);
@@ -50,7 +50,7 @@
             composeJs.type = 'application/javascript'
             headTag.appendChild(composeJs)
         } else {
-            window.location.replace("https://fessedebouc.agilxp.com/api/login?redirectUrl=http://localhost:3000")
+            window.location.replace("https://fessedebouc.agilxp.com/api/login?redirectUrl=https://fessedebouc.agilxp.com")
         }
     }
 </script>
