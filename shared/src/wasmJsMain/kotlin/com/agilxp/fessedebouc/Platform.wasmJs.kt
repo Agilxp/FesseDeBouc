@@ -1,6 +1,5 @@
 package com.agilxp.fessedebouc
 
-import com.agilxp.fessedebouc.model.AuthResponse
 import com.agilxp.fessedebouc.model.RefreshTokenRequest
 import com.agilxp.fessedebouc.model.RefreshTokenResponse
 import com.agilxp.fessedebouc.model.TokenData
@@ -14,7 +13,6 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
-import io.ktor.utils.io.core.*
 import kotlinx.browser.localStorage
 import kotlinx.browser.window
 import kotlinx.datetime.Clock
@@ -57,23 +55,8 @@ class WasmPlatform : PlatformClass() {
                 loadTokens {
                     val accessToken = localStorage["at"]
                     val refreshToken = localStorage["rt"]
-                    val code = URL(window.location.href).searchParams.get("code")
                     if (isValidToken(accessToken) || isValidToken(refreshToken)) {
                         bearerTokenStorage.add(BearerTokens(accessToken!!, refreshToken))
-                    } else if (!code.isNullOrEmpty()) {
-                        val response = HttpClient(Js) {
-                            install(ContentNegotiation) {
-                                json()
-                            }
-                        }.use { client -> client.get("${baseUrl}oauth/exchange?code=$code") }
-                        if (response.status.isSuccess()) {
-                            val auth = response.body<AuthResponse>()
-                            bearerTokenStorage.add(BearerTokens(auth.accessToken, auth.refreshToken))
-                            localStorage.setItem("at", auth.accessToken)
-                            localStorage.setItem("rt", auth.refreshToken)
-                            println("Have now ${bearerTokenStorage.size} tokens")
-                        }
-                        window.location.href = wasmUrl
                     } else if (bearerTokenStorage.size == 0) {
                         println("No token and no code, login...")
                         window.location.href = "${baseUrl}login?redirectUrl=$wasmUrl"
@@ -109,8 +92,12 @@ fun isValidToken(token: String?): Boolean {
     if (token == null) {
         return false
     }
-    val parsedToken = Json.decodeFromString<TokenData>(window.atob(token.split('.')[1]))
-    return parsedToken.exp > Clock.System.now().toEpochMilliseconds() / 1000
+    try {
+        val parsedToken = Json.decodeFromString<TokenData>(window.atob(token.split('.')[1]))
+        return parsedToken.exp > Clock.System.now().toEpochMilliseconds() / 1000
+    } catch (e: Exception) {
+        return false
+    }
 }
 
 actual fun getPlatform(): Platform = WasmPlatform()

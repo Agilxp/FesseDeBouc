@@ -32,6 +32,8 @@ dependencies {
     implementation(libs.postgres)
     implementation(libs.jakarta.mail.api)
     implementation(libs.jakarta.mail.impl)
+    implementation("io.ktor:ktor-server-cors-jvm:3.0.1")
+    implementation("io.ktor:ktor-server-call-logging-jvm:3.0.1")
     testImplementation(libs.ktor.server.tests)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.testcontainers.postgres)

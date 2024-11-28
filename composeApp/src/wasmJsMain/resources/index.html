@@ -5,8 +5,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FesseDeBouc</title>
     <link type="text/css" rel="stylesheet" href="styles.css">
-    <script type="application/javascript" src="composeApp.js"></script>
 </head>
 <body>
+<script>
+    function isValidToken(token) {
+        if (!token) {
+            return false
+        }
+        try {
+            const parsedToken = JSON.parse(window.atob(token.split('.')[1]))
+            return parsedToken.exp > (Date.now() / 1000)
+        } catch (e) {
+            return false
+        }
+    }
+
+    const params = new URL(window.location.href).searchParams;
+    const code = params.get('code');
+    if (code) {
+        fetch(`https://fessedebouc.agilxp.com/api/oauth/exchange?code=${code}`, {
+            headers: {
+                "Accept": "application/json"
+            }
+        })
+            .then(async (response) => {
+                if (response.ok) {
+                    const auth = await response.json()
+                    console.log('Auth token: ', auth)
+                    localStorage.setItem("at", auth.accessToken)
+                    localStorage.setItem("rt", auth.refreshToken)
+                }
+                window.location.replace("http://localhost:3000");
+            })
+            .catch((reason) => {
+                console.log(reason);
+            })
+    } else {
+        const accessToken = localStorage.getItem("at")
+        const refreshToken = localStorage.getItem("rt")
+        if (isValidToken(accessToken) || isValidToken(refreshToken)) {
+            const headTag = document.getElementsByTagName('head')[0]
+            const composeJs = document.createElement('script')
+            composeJs.src = 'composeApp.js'
+            composeJs.type = 'application/javascript'
+            headTag.appendChild(composeJs)
+        } else {
+            window.location.replace("https://fessedebouc.agilxp.com/api/login?redirectUrl=http://localhost:3000")
+        }
+    }
+</script>
 </body>
 </html>

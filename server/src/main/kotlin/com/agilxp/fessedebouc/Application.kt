@@ -18,9 +18,7 @@ fun main(args: Array<String>): Unit = EngineMain.main(args)
 
 fun Application.module() {
     install(CORS) {
-        allowHost("localhost")
-        allowHost("127.0.0.1")
-        allowSameOrigin = true
+        anyHost()
         allowMethod(HttpMethod.Delete)
         allowMethod(HttpMethod.Options)
         allowMethod(HttpMethod.Put)
@@ -61,7 +59,6 @@ fun ApplicationConfig.jwtConfig(): JWTConfig =
         audience = property("audience").getString(),
         issuer = property("issuer").getString(),
     )
-
 
 fun ApplicationConfig.oauthConfig(): OAuthConfig =
     OAuthConfig(

@@ -57,6 +57,9 @@ fun Application.configureRouting(
         }
     }
     routing {
+        options("/{...}") {
+            call.respond(HttpStatusCode.OK)
+        }
         authenticate(jwtConfig.name) {
             route("/groups") {
                 get("/mine") {
@@ -182,7 +185,7 @@ fun Application.configureRouting(
                                         group.id,
                                     )
                                     if (invitation != null) {
-                                        if(invitation.email == user.email) {
+                                        if (invitation.email == user.email) {
                                             if (invitation.status == RequestStatus.PENDING) {
                                                 var pastTenseAction = ""
                                                 var text = ""
