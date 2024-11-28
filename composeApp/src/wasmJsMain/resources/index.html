@@ -20,7 +20,12 @@
         }
     }
 
-    const params = new URL(window.location.href).searchParams;
+    function getRedirect(loc) {
+        return `${loc.protocol}//${loc.host}`
+    }
+
+    const loc = window.location
+    const params = new URL(loc.href).searchParams;
     const code = params.get('code');
     if (code) {
         fetch(`https://fessedebouc.agilxp.com/api/oauth/exchange?code=${code}`, {
@@ -35,7 +40,7 @@
                     localStorage.setItem("at", auth.accessToken)
                     localStorage.setItem("rt", auth.refreshToken)
                 }
-                window.location.replace("https://fessedebouc.agilxp.com");
+                window.location.replace(getRedirect(loc));
             })
             .catch((reason) => {
                 console.log(reason);
@@ -50,7 +55,7 @@
             composeJs.type = 'application/javascript'
             headTag.appendChild(composeJs)
         } else {
-            window.location.replace("https://fessedebouc.agilxp.com/api/login?redirectUrl=https://fessedebouc.agilxp.com")
+            window.location.replace(`https://fessedebouc.agilxp.com/api/login?redirectUrl=${getRedirect(loc)}`)
         }
     }
 </script>
