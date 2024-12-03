@@ -1,6 +1,9 @@
 package com.agilxp.fessedebouc.ui
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -28,8 +31,7 @@ fun FesseDeBoucApp(
         Row(
             modifier = Modifier.padding(innerPadding).fillMaxSize().height(1.dp), // Don't know why but height is needed
         ) {
-            Box(modifier = Modifier.width(48.dp).fillMaxHeight()) {
-            }
+
 //            Box(modifier = Modifier.fillMaxWidth(0.2f).fillMaxHeight()) {
 //                GroupMenu(groupViewModel)
 //            }
