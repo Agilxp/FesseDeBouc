@@ -11,6 +11,7 @@ import com.agilxp.fessedebouc.util.EmailUtils
 import com.auth0.jwt.exceptions.TokenExpiredException
 import io.ktor.http.*
 import io.ktor.http.content.*
+import io.ktor.serialization.kotlinx.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -20,12 +21,17 @@ import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.websocket.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.jvm.javaio.*
+import io.ktor.websocket.*
+import kotlinx.coroutines.delay
+import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import java.util.*
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalEncodingApi::class)
 fun Application.configureRouting(
@@ -55,6 +61,13 @@ fun Application.configureRouting(
         exception<TokenExpiredException> { call, cause ->
             call.respond(HttpStatusCode.Unauthorized, SimpleMessageDTO(cause.message ?: ""))
         }
+    }
+    install(WebSockets) {
+        pingPeriod = 10.seconds
+        timeout = 10.seconds
+        maxFrameSize = Long.MAX_VALUE
+        masking = false
+        contentConverter = KotlinxWebsocketSerializationConverter(Json)
     }
     routing {
         options("/{...}") {
@@ -357,6 +370,39 @@ fun Application.configureRouting(
                                 throw BadRequestException("Event id missing")
                             }
                         }
+                    }
+                }
+            }
+            route("/invitations") {
+                get("/mine") {
+                    val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
+                    val myInvitations = joinGroupRequestRepository.findInvitationByUserEmail(user.email)
+                    call.respond(myInvitations.map { it.toDto() })
+                }
+            }
+            route("/ws") {
+                webSocket("/me") {
+                    // Retrieve user information from JWT
+                    val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
+                    try {
+
+                        // Welcome message or initial data fetch
+                        while (true) {
+                            val events = eventRepository.findUnansweredEventsForUser(user).map { it.toDto() }
+                            val invitations =
+                                joinGroupRequestRepository.findInvitationByUserEmail(user.email).map { it.toDto() }
+                            sendSerialized(UserStatusDTO(events, invitations, emptyList()))
+                            delay(10000)
+                        }
+
+
+                    } catch (e: Exception) {
+                        // Log exception and close the connection
+                        log.error("WebSocket Error: ${e.localizedMessage}", e)
+                    } finally {
+                        // Clean up resources or end session
+                        log.info("Finally block in WS, closing...")
+                        close(CloseReason(CloseReason.Codes.NORMAL, "Closing..."))
                     }
                 }
             }

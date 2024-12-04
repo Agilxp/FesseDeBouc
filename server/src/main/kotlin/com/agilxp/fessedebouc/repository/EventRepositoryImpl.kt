@@ -4,6 +4,7 @@ import com.agilxp.fessedebouc.config.suspendTransaction
 import com.agilxp.fessedebouc.db.*
 import com.agilxp.fessedebouc.model.EventDTO
 import com.agilxp.fessedebouc.util.KOffsetDateTimeSerializer
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.upsert
 import java.util.*
 
@@ -15,6 +16,13 @@ class EventRepositoryImpl : EventRepository {
     override suspend fun getEventById(id: UUID): Event? = suspendTransaction {
         val event = EventDAO.findById(id)
         event?.toModel()
+    }
+
+    override suspend fun findUnansweredEventsForUser(user: User): List<Event> = suspendTransaction {
+        EventParticipants.select(EventParticipants.eventId)
+            .where { (EventParticipants.userId eq user.id) and (EventParticipants.status eq EventStatus.UNANSWERED) }
+            .mapNotNull { EventDAO.findById(it[EventParticipants.eventId]) }
+            .map { it.toModel() }
     }
 
     override suspend fun createEvent(eventDTO: EventDTO, user: User, groupForEvent: Group): Event = suspendTransaction {

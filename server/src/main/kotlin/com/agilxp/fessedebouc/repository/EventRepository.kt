@@ -9,6 +9,7 @@ import java.util.*
 interface EventRepository {
     suspend fun getEventsForGroup(group: Group): List<Event>
     suspend fun getEventById(id: UUID): Event?
+    suspend fun findUnansweredEventsForUser(user: User): List<Event>
     suspend fun createEvent(eventDTO: EventDTO, user: User, groupForEvent: Group): Event
     suspend fun acceptEvent(event: Event, user: User)
     suspend fun declineEvent(event: Event, user: User)
