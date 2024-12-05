@@ -10,8 +10,10 @@ import io.ktor.client.plugins.*
 import io.ktor.client.plugins.auth.*
 import io.ktor.client.plugins.auth.providers.*
 import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import io.ktor.serialization.kotlinx.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.browser.localStorage
 import kotlinx.browser.window
@@ -28,6 +30,10 @@ class WasmPlatform : PlatformClass() {
         // To handle JSON (de)serialization
         install(ContentNegotiation) {
             json()
+        }
+        // To handle websocket
+        install(WebSockets) {
+            contentConverter = KotlinxWebsocketSerializationConverter(Json)
         }
         // OAuth client handling
         install(Auth) {
