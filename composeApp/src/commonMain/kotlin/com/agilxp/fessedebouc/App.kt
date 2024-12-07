@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.agilxp.fessedebouc.ui.view.GroupView
 import com.agilxp.fessedebouc.ui.viewmodel.GroupViewModel
+import com.agilxp.fessedebouc.ui.viewmodel.UserViewModel
 import com.composables.icons.lucide.*
 
 val navigationItems = listOf(
@@ -23,9 +24,13 @@ val navigationItems = listOf(
 )
 
 @Composable
-fun App(groupViewModel: GroupViewModel = viewModel { GroupViewModel() }) {
+fun App(
+    groupViewModel: GroupViewModel = viewModel { GroupViewModel() },
+    userViewModel: UserViewModel = viewModel { UserViewModel() }
+) {
     colors = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()
     var navigationIndex by remember { mutableStateOf(0) }
+    val userUiState by userViewModel.uiState.collectAsState()
     MaterialTheme(colorScheme = colors) {
         BoxWithConstraints {
             val smallScreen = maxWidth.value < 1000
@@ -77,7 +82,7 @@ fun App(groupViewModel: GroupViewModel = viewModel { GroupViewModel() }) {
                                 VerticalDivider(color = colors.onPrimaryContainer)
                                 when (navigationIndex) {
                                     0 -> GroupView(smallScreen, groupViewModel)
-                                    1 -> Text("Invitations")
+                                    1 -> Text("Invitations: ${userUiState.invitations.size}")
                                     2 -> Text("Events")
                                     3 -> Text("Profile")
                                 }

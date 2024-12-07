@@ -380,31 +380,11 @@ fun Application.configureRouting(
                     call.respond(myInvitations.map { it.toDto() })
                 }
             }
-            route("/ws") {
-                webSocket("/me") {
-                    // Retrieve user information from JWT
-                    val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
-                    try {
-
-                        // Welcome message or initial data fetch
-                        while (true) {
-                            val events = eventRepository.findUnansweredEventsForUser(user).map { it.toDto() }
-                            val invitations =
-                                joinGroupRequestRepository.findInvitationByUserEmail(user.email).map { it.toDto() }
-                            sendSerialized(UserStatusDTO(events, invitations, emptyList()))
-                            delay(10000)
-                        }
-
-
-                    } catch (e: Exception) {
-                        // Log exception and close the connection
-                        log.error("WebSocket Error: ${e.localizedMessage}", e)
-                    } finally {
-                        // Clean up resources or end session
-                        log.info("Finally block in WS, closing...")
-                        close(CloseReason(CloseReason.Codes.NORMAL, "Closing..."))
-                    }
-                }
+            get("/me") {
+                val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
+                val events = eventRepository.findUnansweredEventsForUser(user).map { it.toDto() }
+                val invitations = joinGroupRequestRepository.findInvitationByUserEmail(user.email).map { it.toDto() }
+                call.respond(UserStatusDTO(events, invitations, emptyList()))
             }
         }
     }
