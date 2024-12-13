@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.agilxp.fessedebouc.ui.view.GroupView
+import com.agilxp.fessedebouc.ui.view.InvitationView
 import com.agilxp.fessedebouc.ui.viewmodel.GroupViewModel
 import com.agilxp.fessedebouc.ui.viewmodel.UserViewModel
 import com.composables.icons.lucide.*
@@ -37,7 +38,7 @@ fun App(
             if (smallScreen) {
                 Scaffold(
                     bottomBar = {
-                        NavigationBar(Modifier.fillMaxSize()) {
+                        NavigationBar {
                             navigationItems.forEachIndexed { index, map ->
                                 val item = navigationItems.get(index)
                                 val icon = item["icon"] as ImageVector
@@ -57,14 +58,14 @@ fun App(
                         }
                     }
                 ) { contentPadding ->
-                    Row(Modifier.fillMaxSize().padding(contentPadding)) {
-                        HorizontalDivider(color = colors.onPrimaryContainer)
+                    Box(Modifier.padding(contentPadding).fillMaxSize()) {
                         when (navigationIndex) {
                             0 -> GroupView(smallScreen, groupViewModel)
                             1 -> Text("Events")
-                            2 -> Text("Invitations")
+                            2 -> InvitationView(smallScreen, userViewModel)
                             3 -> Text("Profile")
                         }
+                        HorizontalDivider(color = colors.onPrimaryContainer)
                     }
                 }
             } else {
@@ -99,7 +100,7 @@ fun App(
                                 when (navigationIndex) {
                                     0 -> GroupView(smallScreen, groupViewModel)
                                     1 -> Text("Events")
-                                    2 -> Text("Invitations")
+                                    2 -> InvitationView(smallScreen, userViewModel)
                                     3 -> Text("Profile")
                                 }
                             }

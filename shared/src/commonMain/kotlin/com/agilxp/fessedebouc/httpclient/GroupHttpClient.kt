@@ -37,7 +37,7 @@ class GroupHttpClient {
             if (groupUUID == null) {
                 throw Exception("No group ID")
             }
-            val response = getPlatform().client.post("groups/$groupUUID/invite/send") {
+            getPlatform().client.post("groups/$groupUUID/invite/send") {
                 contentType(ContentType.Application.Json)
                 setBody(InvitationDTO(email))
             }

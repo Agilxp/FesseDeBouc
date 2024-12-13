@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.agilxp.fessedebouc.colors
 import com.agilxp.fessedebouc.ui.GroupAdmin
@@ -21,22 +22,24 @@ fun GroupView(smallScreen: Boolean, groupViewModel: GroupViewModel) {
     if (smallScreen) {
         Scaffold(
             bottomBar = {
-                NavigationBar(Modifier.fillMaxSize()) {
+                NavigationBar{
                     groupUiState.myGroups.forEachIndexed { index, map ->
                         val group = groupUiState.myGroups[index]
                         val label = group.name
                         NavigationBarItem(
                             selected = group == groupUiState.selectedGroup,
                             icon = { },
-                            label = { Text(label) },
+                            label = { Text(text = label, overflow = TextOverflow.Ellipsis) },
                             onClick = { groupViewModel.selectGroup(group) },
-                            colors = NavigationBarItemDefaults.colors()
+                            colors = NavigationBarItemDefaults.colors(),
                         )
                     }
                 }
             }
         ) { contentPadding ->
-            Text("small GroupView", Modifier.padding(contentPadding).fillMaxSize())
+            Box(Modifier.padding(contentPadding).fillMaxSize()) {
+                Text("small GroupView", Modifier.padding(contentPadding).fillMaxSize())
+            }
         }
     } else {
         Scaffold { contentPadding ->
