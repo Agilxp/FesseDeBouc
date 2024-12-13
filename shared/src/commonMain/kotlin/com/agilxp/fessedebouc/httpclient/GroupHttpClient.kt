@@ -16,7 +16,6 @@ class GroupHttpClient {
         @Throws(UnknownServerException::class, CancellationException::class)
         suspend fun getMyGroups(): List<GroupDTO> {
             val response = getPlatform().client.get("groups/mine")
-            println("Response in Group client: $response")
             return response.body<List<GroupDTO>>()
         }
 
@@ -38,12 +37,10 @@ class GroupHttpClient {
             if (groupUUID == null) {
                 throw Exception("No group ID")
             }
-            println("Sending invitation (client)")
             val response = getPlatform().client.post("groups/$groupUUID/invite/send") {
                 contentType(ContentType.Application.Json)
                 setBody(InvitationDTO(email))
             }
-            println("Response in Group client: $response")
         }
     }
 }

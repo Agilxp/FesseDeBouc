@@ -1,5 +1,6 @@
 package com.agilxp.fessedebouc.model
 
+import kotlinx.datetime.Clock.System
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -23,5 +24,18 @@ data class PostMessageDTO(
 ) {
     fun isEmpty(): Boolean {
         return document.isNullOrEmpty() && content.isNullOrEmpty()
+    }
+
+    fun toMessageDTO(sender: UserDTO, group: GroupDTO): MessageDTO {
+        return MessageDTO(
+            createdAt = System.now().toString(),
+            document = document,
+            documentContentType = documentContentType,
+            documentFileName = documentFileName,
+            content = content,
+            sender = sender,
+            event = null,
+            group = group
+        )
     }
 }

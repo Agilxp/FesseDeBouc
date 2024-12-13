@@ -8,6 +8,9 @@ import com.agilxp.fessedebouc.db.User
 import com.agilxp.fessedebouc.model.*
 import com.agilxp.fessedebouc.repository.*
 import com.agilxp.fessedebouc.util.EmailUtils
+import com.auth0.jwt.JWT
+import com.auth0.jwt.JWTVerifier
+import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.exceptions.TokenExpiredException
 import io.ktor.http.*
 import io.ktor.http.content.*
@@ -69,9 +72,77 @@ fun Application.configureRouting(
         masking = false
         contentConverter = KotlinxWebsocketSerializationConverter(Json)
     }
+    val jwtVerifier = JWT
+        .require(Algorithm.HMAC256(jwtConfig.secret))
+        .withAudience(jwtConfig.audience)
+        .withIssuer(jwtConfig.issuer)
+        .build()
     routing {
         options("/{...}") {
             call.respond(HttpStatusCode.OK)
+        }
+        route("/ws") {
+            webSocket("/me") {
+                val token = call.request.queryParameters["at"]
+                val user = getUserFromToken(jwtVerifier, token, userRepository)
+                val events = eventRepository.findUnansweredEventsForUser(user).map { it.toDto() }
+                val invitations = joinGroupRequestRepository.findInvitationByUserEmail(user.email).map { it.toDto() }
+                val userStatus = UserStatusDTO(events, invitations, emptyList())
+                val status = StatusConnection(userStatus)
+                sendSerialized(userStatus)
+                while (true) {
+                    delay(30000)
+                    val events = eventRepository.findUnansweredEventsForUser(user).map { it.toDto() }
+                    val invitations =
+                        joinGroupRequestRepository.findInvitationByUserEmail(user.email).map { it.toDto() }
+                    val newUserStatus = UserStatusDTO(events, invitations, emptyList())
+                    if (status.hasChanges(newUserStatus)) {
+                        sendSerialized(newUserStatus)
+                    }
+                }
+            }
+            val messagingConnections = Collections.synchronizedSet<MessagingConnection?>(LinkedHashSet())
+            route("/messages") {
+                webSocket("/{groupId}") {
+                    val token = call.request.queryParameters["at"]
+                    val user = getUserFromToken(jwtVerifier, token, userRepository)
+                    val groupId = UUID.fromString(call.parameters["groupId"])
+                    if (groupId != null) {
+                        val group = isUserInGroup(user, groupId, groupRepository)
+                        val thisConnection = MessagingConnection(this, user, group)
+                        messagingConnections.add(thisConnection)
+
+                        try {
+                            for (frame in incoming) {
+                                frame as? Frame.Text ?: continue
+                                val incomingMessage =
+                                    Json.decodeFromString(PostMessageDTO.serializer(), frame.readText())
+                                if (incomingMessage.isEmpty()) {
+                                    outgoing.send(Frame.Text("Message content cannot be empty"))
+                                } else {
+                                    messageRepository.addMessageToGroup(incomingMessage, user, group)
+                                    messagingConnections.filter { it.group == group }.forEach {
+                                        it.session.send(
+                                            Frame.Text(
+                                                Json.encodeToString(
+                                                    MessageDTO.serializer(),
+                                                    incomingMessage.toMessageDTO(user.toDto(), group.toDto())
+                                                )
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                        } catch (e: Exception) {
+                            this@configureRouting.log.error("Error in WebSocket processing: ${e.message}")
+                        } finally {
+                            messagingConnections.remove(thisConnection)
+                        }
+                    } else {
+                        throw BadRequestException("Group id missing")
+                    }
+                }
+            }
         }
         authenticate(jwtConfig.name) {
             route("/groups") {
@@ -408,8 +479,20 @@ suspend fun isGroupAdmin(user: User, groupId: UUID, groupRepository: GroupReposi
     }
 }
 
+suspend fun getUserFromToken(jwtVerifier: JWTVerifier, token: String?, userRepository: UserRepository): User {
+    if (token == null) {
+        throw AuthenticationException("No token")
+    }
+    val principal = JWTPrincipal(jwtVerifier.verify(token))
+    return validatePrincipal(principal, userRepository)
+}
+
 suspend fun getInfoFromPrincipal(call: ApplicationCall, jwtConfig: JWTConfig, userRepository: UserRepository): User {
     val principal = call.principal<JWTPrincipal>(jwtConfig.name)
+    return validatePrincipal(principal, userRepository)
+}
+
+suspend fun validatePrincipal(principal: JWTPrincipal?, userRepository: UserRepository): User {
     if (principal != null) {
         val userId: UUID =
             UUID.fromString(principal.payload.getClaim("user_id").asString())

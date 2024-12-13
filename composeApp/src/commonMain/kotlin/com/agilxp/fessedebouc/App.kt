@@ -18,8 +18,8 @@ import com.composables.icons.lucide.*
 
 val navigationItems = listOf(
     mapOf("icon" to Lucide.Group, "label" to "Groups"),
-    mapOf("icon" to Lucide.MailCheck, "label" to "Invitations"),
     mapOf("icon" to Lucide.CalendarCheck2, "label" to "Events"),
+    mapOf("icon" to Lucide.MailCheck, "label" to "Invitations"),
     mapOf("icon" to Lucide.UserCog, "label" to "Profile"),
 )
 
@@ -40,8 +40,12 @@ fun App(
                         NavigationBar(Modifier.fillMaxSize()) {
                             navigationItems.forEachIndexed { index, map ->
                                 val item = navigationItems.get(index)
-                                val icon = item.get("icon") as ImageVector
-                                val label = item.get("label") as String
+                                val icon = item["icon"] as ImageVector
+                                var label = item["label"] as String
+                                when(index) {
+                                    1 -> label += " (${userUiState.events.size})"
+                                    2 -> label += " (${userUiState.invitations.size})"
+                                }
                                 NavigationBarItem(
                                     selected = index == navigationIndex,
                                     icon = { Icon(icon, label) },
@@ -53,18 +57,30 @@ fun App(
                         }
                     }
                 ) { contentPadding ->
-                    Text("small : $navigationIndex", Modifier.padding(contentPadding).fillMaxSize())
+                    Row(Modifier.fillMaxSize().padding(contentPadding)) {
+                        HorizontalDivider(color = colors.onPrimaryContainer)
+                        when (navigationIndex) {
+                            0 -> GroupView(smallScreen, groupViewModel)
+                            1 -> Text("Events")
+                            2 -> Text("Invitations")
+                            3 -> Text("Profile")
+                        }
+                    }
                 }
             } else {
                 Scaffold { contentPadding ->
                     PermanentNavigationDrawer(
                         modifier = Modifier.fillMaxSize().background(colors.primaryContainer),
                         drawerContent = {
-                            PermanentDrawerSheet(Modifier.width(190.dp).fillMaxSize()) {
+                            PermanentDrawerSheet(Modifier.width(210.dp).fillMaxSize()) {
                                 LazyColumn(Modifier.padding(vertical = 30.dp).fillMaxSize()) {
                                     itemsIndexed(navigationItems) { index, item ->
                                         val icon = item["icon"] as ImageVector
-                                        val label = item["label"] as String
+                                        var label = item["label"] as String
+                                        when(index) {
+                                            1 -> label += " (${userUiState.events.size})"
+                                            2 -> label += " (${userUiState.invitations.size})"
+                                        }
                                         NavigationDrawerItem(
                                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                                             selected = index == navigationIndex,
@@ -82,8 +98,8 @@ fun App(
                                 VerticalDivider(color = colors.onPrimaryContainer)
                                 when (navigationIndex) {
                                     0 -> GroupView(smallScreen, groupViewModel)
-                                    1 -> Text("Invitations: ${userUiState.invitations.size}")
-                                    2 -> Text("Events")
+                                    1 -> Text("Events")
+                                    2 -> Text("Invitations")
                                     3 -> Text("Profile")
                                 }
                             }

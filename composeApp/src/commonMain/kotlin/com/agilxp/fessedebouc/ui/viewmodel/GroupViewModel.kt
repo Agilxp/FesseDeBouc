@@ -7,6 +7,7 @@ import com.agilxp.fessedebouc.httpclient.MessageHttpClient
 import com.agilxp.fessedebouc.model.GroupDTO
 import com.agilxp.fessedebouc.model.MessageDTO
 import com.agilxp.fessedebouc.model.PostMessageDTO
+import io.ktor.websocket.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -52,7 +53,6 @@ class GroupViewModel : ViewModel() {
     fun sendInvitation(email: String) {
         viewModelScope.launch(Dispatchers.Default) {
             try {
-                println("Sending invitation (model)")
                 GroupHttpClient.sendInvitation(email, _uiState.value.selectedGroup?.id)
                 _uiState.update { currentState ->
                     currentState.copy(invitationMessages = "Invitation send successfully to $email")
@@ -68,27 +68,42 @@ class GroupViewModel : ViewModel() {
     fun selectGroup(group: GroupDTO) {
         viewModelScope.launch(Dispatchers.Default) {
             val groupMessages = MessageHttpClient.getGroupMessages(group)
+            val session = MessageHttpClient.createMessageSession(group) {
+                _uiState.update { currentState ->
+                    val messages = currentState.groupMessages.toMutableList()
+                    messages.add(it)
+                    currentState.copy(
+                        groupMessages = messages,
+                        errorMessage = currentState.errorMessage + ""
+                    )
+                }
+            }
             _uiState.update { currentState ->
                 currentState.copy(
                     selectedGroup = group,
                     errorMessage = null,
-                    groupMessages = groupMessages.toMutableList()
+                    groupMessages = groupMessages.toMutableList(),
+                    sessionMap = currentState.sessionMap + (group to session)
                 )
             }
         }
     }
 
     fun sendMessage(message: PostMessageDTO) {
-        println("group: ${_uiState.value.selectedGroup} and message: ${message.isEmpty()}")
         if (_uiState.value.selectedGroup != null && !message.isEmpty()) {
+            val group = _uiState.value.selectedGroup!!
             viewModelScope.launch(Dispatchers.Default) {
-                MessageHttpClient.postMessageToGroup(_uiState.value.selectedGroup!!, message)
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        errorMessage = null,
-                        groupMessages = MessageHttpClient.getGroupMessages(currentState.selectedGroup!!).toMutableList()
-                    )
+                val session = _uiState.value.sessionMap[group]
+                if (session == null) {
+                    println("Error sending message: Couldn't find session for group $group")
+                    _uiState.update { currentState ->
+                        currentState.copy(
+                            errorMessage = "Error sending message: Couldn't find session for group $group",
+                        )
+                    }
+                    return@launch
                 }
+                MessageHttpClient.postMessageToGroup(message, session)
             }
         }
     }
@@ -101,4 +116,5 @@ data class GroupUiState(
     val errorMessage: String? = null,
     val selectedGroup: GroupDTO? = null,
     val invitationMessages: String? = null,
+    val sessionMap: Map<GroupDTO, DefaultWebSocketSession> = emptyMap()
 )

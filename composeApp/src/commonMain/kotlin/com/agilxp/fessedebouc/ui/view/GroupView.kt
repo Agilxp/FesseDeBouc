@@ -43,7 +43,7 @@ fun GroupView(smallScreen: Boolean, groupViewModel: GroupViewModel) {
             PermanentNavigationDrawer(
                 modifier = Modifier.fillMaxSize().background(colors.primaryContainer),
                 drawerContent = {
-                    PermanentDrawerSheet(Modifier.width(190.dp).fillMaxSize()) {
+                    PermanentDrawerSheet(Modifier.width(200.dp).fillMaxSize()) {
                         LazyColumn(Modifier.padding(vertical = 30.dp).fillMaxSize()) {
                             items(groupUiState.myGroups) { group ->
                                 val label = group.name

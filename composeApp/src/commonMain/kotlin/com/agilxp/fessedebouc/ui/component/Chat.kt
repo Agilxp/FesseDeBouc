@@ -98,7 +98,7 @@ fun ChatWindow(
     var composingText by remember { mutableStateOf("") }
     val groupUiState by groupViewModel.uiState.collectAsState()
     val state = rememberLazyListState()
-    val userEmail = getPlatform().getUserEmail()
+    val userEmail = getPlatform().getUser().email
     LaunchedEffect(groupUiState.groupMessages) {
         state.animateScrollToItem(groupUiState.groupMessages.size)
     }

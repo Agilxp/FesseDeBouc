@@ -2,6 +2,7 @@ package com.agilxp.fessedebouc
 
 import com.agilxp.fessedebouc.model.RefreshTokenRequest
 import com.agilxp.fessedebouc.model.RefreshTokenResponse
+import com.agilxp.fessedebouc.model.UserDTO
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
@@ -60,7 +61,11 @@ class JVMPlatform : PlatformClass() {
         }
     }
 
-    override fun getUserEmail(): String {
+    override fun getUser(): UserDTO {
+        TODO("Not yet implemented")
+    }
+
+    override fun getToken(): String {
         TODO("Not yet implemented")
     }
 }

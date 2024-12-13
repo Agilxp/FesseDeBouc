@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.agilxp.fessedebouc.httpclient.UserHttpClient
 import com.agilxp.fessedebouc.model.UserStatusDTO
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,11 +16,8 @@ class UserViewModel : ViewModel() {
 
     init {
         viewModelScope.launch(Dispatchers.Default) {
-            while (true) {
-                UserHttpClient.getUserStatus().let {
-                    _uiState.value = it
-                }
-                delay(10000)
+            UserHttpClient.getUserStatus {
+                _uiState.value = it
             }
         }
     }

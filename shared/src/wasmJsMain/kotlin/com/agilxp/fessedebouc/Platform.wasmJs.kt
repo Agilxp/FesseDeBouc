@@ -3,6 +3,7 @@ package com.agilxp.fessedebouc
 import com.agilxp.fessedebouc.model.RefreshTokenRequest
 import com.agilxp.fessedebouc.model.RefreshTokenResponse
 import com.agilxp.fessedebouc.model.TokenData
+import com.agilxp.fessedebouc.model.UserDTO
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.js.*
@@ -84,13 +85,22 @@ class WasmPlatform : PlatformClass() {
         }
     }
 
-    override fun getUserEmail(): String {
-        val accessToken = localStorage["at"]
-        if (accessToken.isNullOrEmpty()) {
-            return ""
+    var user: UserDTO? = null
+
+    override fun getUser(): UserDTO {
+        if (user == null) {
+            val accessToken = localStorage["at"]
+            if (accessToken.isNullOrEmpty()) {
+                throw IllegalStateException("No token found")
+            }
+            val parsedToken = Json.decodeFromString<TokenData>(window.atob(accessToken.split('.')[1]))
+            user = UserDTO(parsedToken.user_email, parsedToken.user_email, parsedToken.google_id)
         }
-        val parsedToken = Json.decodeFromString<TokenData>(window.atob(accessToken.split('.')[1]))
-        return parsedToken.user_email
+        return user!!
+    }
+
+    override fun getToken(): String {
+        return localStorage["at"] ?: ""
     }
 }
 

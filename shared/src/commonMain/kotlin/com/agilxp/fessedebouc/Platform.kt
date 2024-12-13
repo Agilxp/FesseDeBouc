@@ -1,5 +1,6 @@
 package com.agilxp.fessedebouc
 
+import com.agilxp.fessedebouc.model.UserDTO
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.api.*
@@ -10,7 +11,8 @@ import kotlinx.serialization.json.Json
 interface Platform {
     val name: String
     val client: HttpClient
-    fun getUserEmail(): String
+    fun getUser(): UserDTO
+    fun getToken(): String
 }
 
 abstract class PlatformClass() : Platform {
