@@ -101,7 +101,7 @@ fun Application.configureRouting(
                     }
                 }
             }
-            val messagingConnections = Collections.synchronizedSet<MessagingConnection?>(LinkedHashSet())
+            val messagingConnections = Collections.synchronizedSet<MessagingConnection>(LinkedHashSet())
             route("/messages") {
                 webSocket("/{groupId}") {
                     val token = call.request.queryParameters["at"]
@@ -110,7 +110,7 @@ fun Application.configureRouting(
                     if (groupId != null) {
                         val group = isUserInGroup(user, groupId, groupRepository)
                         val thisConnection = MessagingConnection(this, user, group)
-                        messagingConnections.add(thisConnection)
+                        println("Added session? " + messagingConnections.add(thisConnection))
 
                         try {
                             for (frame in incoming) {

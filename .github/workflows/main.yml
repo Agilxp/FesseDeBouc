@@ -1,0 +1,47 @@
+name: Fesse de Bouc Build and deploy
+
+env:
+  ACTIONS_STEP_DEBUG: true
+  TZ: Europe/Oslo
+
+on:
+  push:
+    branches:
+      - '*'
+      - '**'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build with tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '21'
+          cache: 'gradle'
+      - name: build server
+        run: ./gradlew :server:installDist --no-daemon
+      - name: build wasm
+        run: ./gradlew :composeApp:wasmJsBrowserDistribution --no-daemon
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy
+    steps:
+      - name: setup SSH
+        run: |
+          install -m 600 -D /dev/null ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ vars.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+      - name: deploy server
+        run: |
+          scp -r server/build/install/server/* ubuntu@207.127.95.116:/opt/fessedebouc/
+          ssh ubuntu@207.127.95.116 'sudo systemctl restart fessedebouc'
+      - name: deploy frontend
+        run: |
+          scp -r composeApp/build/dist/wasmJs/productionExecutable/* ubuntu@207.127.95.116:/var/www/html/

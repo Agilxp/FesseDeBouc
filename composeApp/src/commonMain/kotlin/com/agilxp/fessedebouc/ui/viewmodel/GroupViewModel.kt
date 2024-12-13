@@ -68,15 +68,19 @@ class GroupViewModel : ViewModel() {
     fun selectGroup(group: GroupDTO) {
         viewModelScope.launch(Dispatchers.Default) {
             val groupMessages = MessageHttpClient.getGroupMessages(group)
-            val session = MessageHttpClient.createMessageSession(group) {
-                _uiState.update { currentState ->
-                    val messages = currentState.groupMessages.toMutableList()
-                    messages.add(it)
-                    currentState.copy(
-                        groupMessages = messages,
-                        errorMessage = currentState.errorMessage + ""
-                    )
+            val session = if (!_uiState.value.sessionMap.containsKey(group)) {
+                MessageHttpClient.createMessageSession(group) {
+                    _uiState.update { currentState ->
+                        val messages = currentState.groupMessages.toMutableList()
+                        messages.add(it)
+                        currentState.copy(
+                            groupMessages = messages,
+                            errorMessage = currentState.errorMessage + ""
+                        )
+                    }
                 }
+            } else {
+                _uiState.value.sessionMap[group]!!
             }
             _uiState.update { currentState ->
                 currentState.copy(

@@ -1,4 +1,4 @@
-package com.agilxp.fessedebouc.ui
+package com.agilxp.fessedebouc.ui.component
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

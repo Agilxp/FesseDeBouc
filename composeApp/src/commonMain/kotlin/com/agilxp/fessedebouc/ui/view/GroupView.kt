@@ -8,12 +8,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.agilxp.fessedebouc.colors
-import com.agilxp.fessedebouc.ui.GroupAdmin
 import com.agilxp.fessedebouc.ui.component.ChatWindow
+import com.agilxp.fessedebouc.ui.component.GroupAdmin
 import com.agilxp.fessedebouc.ui.viewmodel.GroupViewModel
 
 @Composable
@@ -22,14 +23,14 @@ fun GroupView(smallScreen: Boolean, groupViewModel: GroupViewModel) {
     if (smallScreen) {
         Scaffold(
             bottomBar = {
-                NavigationBar{
+                NavigationBar {
                     groupUiState.myGroups.forEachIndexed { index, map ->
                         val group = groupUiState.myGroups[index]
                         val label = group.name
                         NavigationBarItem(
                             selected = group == groupUiState.selectedGroup,
                             icon = { },
-                            label = { Text(text = label, overflow = TextOverflow.Ellipsis) },
+                            label = { Text(text = label, overflow = TextOverflow.Ellipsis, maxLines = 2) },
                             onClick = { groupViewModel.selectGroup(group) },
                             colors = NavigationBarItemDefaults.colors(),
                         )
@@ -37,8 +38,14 @@ fun GroupView(smallScreen: Boolean, groupViewModel: GroupViewModel) {
                 }
             }
         ) { contentPadding ->
-            Box(Modifier.padding(contentPadding).fillMaxSize()) {
-                Text("small GroupView", Modifier.padding(contentPadding).fillMaxSize())
+            if (groupUiState.selectedGroup != null) {
+                Box(modifier = Modifier.fillMaxSize().padding(contentPadding)) {
+                    ChatWindow(groupViewModel)
+                }
+            } else {
+                Box(Modifier.fillMaxSize(), Alignment.Center) {
+                    Text("Select a group")
+                }
             }
         }
     } else {
@@ -53,7 +60,7 @@ fun GroupView(smallScreen: Boolean, groupViewModel: GroupViewModel) {
                                 NavigationDrawerItem(
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                                     selected = group == groupUiState.selectedGroup,
-                                    label = { Text(label) },
+                                    label = { Text(label, overflow = TextOverflow.Ellipsis, maxLines = 1) },
                                     onClick = { groupViewModel.selectGroup(group) },
                                     shape = ShapeDefaults.Medium
                                 )
@@ -75,7 +82,7 @@ fun GroupView(smallScreen: Boolean, groupViewModel: GroupViewModel) {
                                 }
                             }
                         } else {
-                            Box(Modifier.fillMaxSize()) {
+                            Box(Modifier.fillMaxSize(), Alignment.Center) {
                                 Text("Select a group")
                             }
                         }

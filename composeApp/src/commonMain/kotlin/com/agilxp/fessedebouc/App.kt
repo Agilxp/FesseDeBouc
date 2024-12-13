@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -18,7 +19,7 @@ import com.agilxp.fessedebouc.ui.viewmodel.UserViewModel
 import com.composables.icons.lucide.*
 
 val navigationItems = listOf(
-    mapOf("icon" to Lucide.Group, "label" to "Groups"),
+    mapOf("icon" to Lucide.MessagesSquare, "label" to "Chats"),
     mapOf("icon" to Lucide.CalendarCheck2, "label" to "Events"),
     mapOf("icon" to Lucide.MailCheck, "label" to "Invitations"),
     mapOf("icon" to Lucide.UserCog, "label" to "Profile"),
@@ -43,7 +44,7 @@ fun App(
                                 val item = navigationItems.get(index)
                                 val icon = item["icon"] as ImageVector
                                 var label = item["label"] as String
-                                when(index) {
+                                when (index) {
                                     1 -> label += " (${userUiState.events.size})"
                                     2 -> label += " (${userUiState.invitations.size})"
                                 }
@@ -61,11 +62,15 @@ fun App(
                     Box(Modifier.padding(contentPadding).fillMaxSize()) {
                         when (navigationIndex) {
                             0 -> GroupView(smallScreen, groupViewModel)
-                            1 -> Text("Events")
+                            1 -> Box(Modifier.fillMaxSize(), Alignment.Center) {
+                                Text("Events")
+                            }
+
                             2 -> InvitationView(smallScreen, userViewModel)
-                            3 -> Text("Profile")
+                            3 -> Box(Modifier.fillMaxSize(), Alignment.Center) {
+                                Text("Profile")
+                            }
                         }
-                        HorizontalDivider(color = colors.onPrimaryContainer)
                     }
                 }
             } else {
@@ -78,7 +83,7 @@ fun App(
                                     itemsIndexed(navigationItems) { index, item ->
                                         val icon = item["icon"] as ImageVector
                                         var label = item["label"] as String
-                                        when(index) {
+                                        when (index) {
                                             1 -> label += " (${userUiState.events.size})"
                                             2 -> label += " (${userUiState.invitations.size})"
                                         }
@@ -99,9 +104,14 @@ fun App(
                                 VerticalDivider(color = colors.onPrimaryContainer)
                                 when (navigationIndex) {
                                     0 -> GroupView(smallScreen, groupViewModel)
-                                    1 -> Text("Events")
+                                    1 -> Box(Modifier.fillMaxSize(), Alignment.Center) {
+                                        Text("Events")
+                                    }
+
                                     2 -> InvitationView(smallScreen, userViewModel)
-                                    3 -> Text("Profile")
+                                    3 -> Box(Modifier.fillMaxSize(), Alignment.Center) {
+                                        Text("Profile")
+                                    }
                                 }
                             }
                         }
