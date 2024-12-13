@@ -34,6 +34,7 @@ jobs:
     name: Deploy
     needs: [ build ]
     steps:
+      - uses: actions/checkout@v4
       - name: setup SSH
         run: |
           install -m 600 -D /dev/null ~/.ssh/id_rsa
