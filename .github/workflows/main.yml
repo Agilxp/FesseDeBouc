@@ -29,21 +29,18 @@ jobs:
         run: ./gradlew :server:installDist --no-daemon
       - name: build wasm
         run: ./gradlew :composeApp:wasmJsBrowserDistribution --no-daemon
-  deploy:
-    runs-on: ubuntu-latest
-    name: Deploy
-    needs: [ build ]
-    steps:
-      - uses: actions/checkout@v4
       - name: setup SSH
+        if: github.ref == 'refs/heads/main'
         run: |
           install -m 600 -D /dev/null ~/.ssh/id_rsa
           echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
           echo "${{ vars.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
       - name: deploy server
+        if: github.ref == 'refs/heads/main'
         run: |
           scp -r server/build/install/server/* ubuntu@207.127.95.116:/opt/fessedebouc/
           ssh ubuntu@207.127.95.116 'sudo systemctl restart fessedebouc'
       - name: deploy frontend
+        if: github.ref == 'refs/heads/main'
         run: |
           scp -r composeApp/build/dist/wasmJs/productionExecutable/* ubuntu@207.127.95.116:/var/www/html/
