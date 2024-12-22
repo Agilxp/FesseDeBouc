@@ -526,7 +526,7 @@ suspend fun isGroupAdmin(user: User, groupId: UUID, groupRepository: GroupReposi
     if (group.admins.contains(user)) {
         return true
     } else {
-        throw AuthenticationException("User not in group")
+        throw AuthenticationException("User not admin in group")
     }
 }
 

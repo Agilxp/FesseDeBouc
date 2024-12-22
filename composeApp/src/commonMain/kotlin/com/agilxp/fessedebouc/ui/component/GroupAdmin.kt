@@ -45,12 +45,12 @@ fun GroupAdmin(
     var borderDp by remember { mutableStateOf(1.dp) }
     Scaffold(containerColor = MaterialTheme.colorScheme.surface) { padding ->
         Column(modifier = Modifier.padding(padding)) {
-            Box(Modifier.fillMaxWidth().height(500.dp).background(colors.primaryContainer)) {
+            Column(Modifier.fillMaxWidth().height(500.dp)) {
                 Text("Members")
                 LazyColumn(Modifier.padding(vertical = 10.dp).fillMaxSize()) {
                     items(groupUiState.selectedGroup!!.users) { user ->
                         OutlinedCard {
-                            Box(Modifier.fillMaxWidth().padding(horizontal = 6.dp)) {
+                            Column(Modifier.fillMaxWidth().padding(horizontal = 10.dp)) {
                                 Row(
                                     Modifier.padding(10.dp).fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically
@@ -67,20 +67,18 @@ fun GroupAdmin(
                                         Text(user.email, style = MaterialTheme.typography.titleSmall)
                                     }
                                     Spacer(Modifier.width(10.dp))
-                                    Column {
-                                        ExtendedFloatingActionButton(
-                                            onClick = {
-                                                groupViewModel.addGroupAdmin(user)
-                                            },
-                                            modifier = Modifier.padding(horizontal = 12.dp),
+                                    ExtendedFloatingActionButton(
+                                        onClick = {
+                                            groupViewModel.addGroupAdmin(user)
+                                        },
+                                        modifier = Modifier.padding(horizontal = 12.dp),
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start)
                                         ) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start)
-                                            ) {
-                                                Icon(Lucide.ShieldPlus, null)
-                                                Text("Make admin")
-                                            }
+                                            Icon(Lucide.ShieldPlus, null)
+                                            Text("Make admin")
                                         }
                                     }
                                 }
