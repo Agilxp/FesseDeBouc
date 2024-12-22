@@ -1,22 +1,26 @@
 package com.agilxp.fessedebouc.ui.view
 
+import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.agilxp.fessedebouc.colors
@@ -25,6 +29,7 @@ import com.agilxp.fessedebouc.ui.component.GroupAdmin
 import com.agilxp.fessedebouc.ui.viewmodel.GroupViewModel
 import com.composables.core.*
 import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Plus
 import com.composables.icons.lucide.Settings
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,6 +55,8 @@ fun TopGroupBar(groupViewModel: GroupViewModel, state: DialogState) {
 fun GroupView(smallScreen: Boolean, groupViewModel: GroupViewModel) {
     val groupUiState by groupViewModel.uiState.collectAsState()
     val state = rememberDialogState(initiallyVisible = false)
+    var newGroupName by remember { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
     if (smallScreen) {
         Scaffold(topBar = {
             TopGroupBar(groupViewModel, state)
@@ -85,16 +92,57 @@ fun GroupView(smallScreen: Boolean, groupViewModel: GroupViewModel) {
                 modifier = Modifier.fillMaxSize().background(colors.primaryContainer),
                 drawerContent = {
                     PermanentDrawerSheet(Modifier.width(200.dp).fillMaxSize()) {
-                        LazyColumn(Modifier.padding(vertical = 30.dp).fillMaxSize()) {
-                            items(groupUiState.myGroups) { group ->
-                                val label = group.name
-                                NavigationDrawerItem(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                    selected = group == groupUiState.selectedGroup,
-                                    label = { Text(label, overflow = TextOverflow.Ellipsis, maxLines = 1) },
-                                    onClick = { groupViewModel.selectGroup(group) },
-                                    shape = ShapeDefaults.Medium
-                                )
+                        Column {
+                            Spacer(Modifier.height(6.dp))
+                            TextField(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                                label = { Text("Group name") },
+                                value = newGroupName,
+                                onValueChange = { newGroupName = it },
+                                singleLine = true,
+                                trailingIcon = {
+                                    AnimatedVisibility(visible = newGroupName.isNotBlank(), enter = fadeIn(), exit = fadeOut()) {
+                                        IconButton(onClick = { newGroupName = "" }) {
+                                            Icon(Icons.Outlined.Clear, "Clear")
+                                        }
+                                    }
+                                },
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Text,
+                                    imeAction = ImeAction.Next,
+                                    capitalization = KeyboardCapitalization.Words
+                                ),
+                                keyboardActions = KeyboardActions {
+                                    focusManager.moveFocus(FocusDirection.Next)
+                                })
+                            Spacer(Modifier.height(6.dp))
+                            ExtendedFloatingActionButton(
+                                onClick = {
+                                    groupViewModel.addGroup(newGroupName)
+                                    newGroupName = ""
+                                },
+                                modifier = Modifier.padding(horizontal = 12.dp),
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start)) {
+                                    Icon(Lucide.Plus, null)
+                                    Text("Add Group")
+                                }
+                            }
+                            if (groupUiState.errorMessage?.isNotEmpty() == true) {
+                                Spacer(Modifier.height(6.dp))
+                                Text(groupUiState.errorMessage!!, modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp), color = colors.error)
+                            }
+                            LazyColumn(Modifier.padding(vertical = 10.dp).fillMaxSize()) {
+                                items(groupUiState.myGroups) { group ->
+                                    val label = group.name
+                                    NavigationDrawerItem(
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                        selected = group == groupUiState.selectedGroup,
+                                        label = { Text(label, overflow = TextOverflow.Ellipsis, maxLines = 1) },
+                                        onClick = { groupViewModel.selectGroup(group) },
+                                        shape = ShapeDefaults.Medium
+                                    )
+                                }
                             }
                         }
                     }
