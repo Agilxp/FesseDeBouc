@@ -33,7 +33,7 @@ import com.agilxp.fessedebouc.colors
 import com.agilxp.fessedebouc.ui.viewmodel.GroupViewModel
 import com.agilxp.fessedebouc.util.isValidEmail
 import com.composables.icons.lucide.Lucide
-import com.composables.icons.lucide.Plus
+import com.composables.icons.lucide.ShieldPlus
 
 @Composable
 fun GroupAdmin(
@@ -45,35 +45,42 @@ fun GroupAdmin(
     var borderDp by remember { mutableStateOf(1.dp) }
     Scaffold(containerColor = MaterialTheme.colorScheme.surface) { padding ->
         Column(modifier = Modifier.padding(padding)) {
-            Text("Members (admin/kick)")
-            LazyColumn(Modifier.padding(vertical = 10.dp).fillMaxSize()) {
-                items(groupUiState.selectedGroup!!.users) { user ->
-                    OutlinedCard {
-                        Box(Modifier.width(400.dp)) {
-                            Row(
-                                Modifier.padding(10.dp).fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                AsyncImage(
-                model = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=256&q=80",
-                modifier = Modifier.size(100.dp).clip(CircleShape), contentScale = ContentScale.Crop, contentDescription = "User image"
-                                )
-                                Spacer(Modifier.width(10.dp))
-                                Column {
-                                    Text(user.name, style = MaterialTheme.typography.titleLarge)
-                                    Text(user.email, style = MaterialTheme.typography.titleSmall)
-                                }
-                                Spacer(Modifier.width(10.dp))
-                                Column {
-                                    ExtendedFloatingActionButton(
-                                        onClick = {
-                                            groupViewModel.addGroupAdmin(user)
-                                        },
-                                        modifier = Modifier.padding(horizontal = 12.dp),
-                                    ) {
-                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start)) {
-                                            Icon(Lucide.Plus, null)
-                                            Text("Make admin")
+            Box(Modifier.fillMaxWidth().height(500.dp).background(colors.primaryContainer)) {
+                Text("Members")
+                LazyColumn(Modifier.padding(vertical = 10.dp).fillMaxSize()) {
+                    items(groupUiState.selectedGroup!!.users) { user ->
+                        OutlinedCard {
+                            Box(Modifier.fillMaxWidth().padding(horizontal = 6.dp)) {
+                                Row(
+                                    Modifier.padding(10.dp).fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    AsyncImage(
+                                        model = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=256&q=80",
+                                        modifier = Modifier.size(100.dp).clip(CircleShape),
+                                        contentScale = ContentScale.Crop,
+                                        contentDescription = "User image"
+                                    )
+                                    Spacer(Modifier.width(10.dp))
+                                    Column {
+                                        Text(user.name, style = MaterialTheme.typography.titleLarge)
+                                        Text(user.email, style = MaterialTheme.typography.titleSmall)
+                                    }
+                                    Spacer(Modifier.width(10.dp))
+                                    Column {
+                                        ExtendedFloatingActionButton(
+                                            onClick = {
+                                                groupViewModel.addGroupAdmin(user)
+                                            },
+                                            modifier = Modifier.padding(horizontal = 12.dp),
+                                        ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start)
+                                            ) {
+                                                Icon(Lucide.ShieldPlus, null)
+                                                Text("Make admin")
+                                            }
                                         }
                                     }
                                 }
