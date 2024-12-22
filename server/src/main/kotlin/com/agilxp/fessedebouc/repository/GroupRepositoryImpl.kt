@@ -46,6 +46,18 @@ class GroupRepositoryImpl : GroupRepository {
         }
     }
 
+    override suspend fun addAdminToGroup(group: Group, user: User): Unit = suspendTransaction {
+        UserGroups.update(where = { (UserGroups.userId eq user.id) and (UserGroups.groupId eq group.id) }) {
+            it[isAdmin] = true
+        }
+    }
+
+    override suspend fun removeAdminFromGroup(group: Group, user: User): Unit = suspendTransaction {
+        UserGroups.update(where = { (UserGroups.userId eq user.id) and (UserGroups.groupId eq group.id) }) {
+            it[isAdmin] = false
+        }
+    }
+
     override suspend fun removeUserFromGroup(
         groupId: UUID,
         userId: UUID

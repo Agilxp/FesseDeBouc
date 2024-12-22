@@ -5,14 +5,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Email
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,14 +22,18 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
 import com.agilxp.fessedebouc.colors
 import com.agilxp.fessedebouc.ui.viewmodel.GroupViewModel
 import com.agilxp.fessedebouc.util.isValidEmail
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Plus
 
 @Composable
 fun GroupAdmin(
@@ -39,10 +44,45 @@ fun GroupAdmin(
     var emailError by remember { mutableStateOf(false) }
     var borderDp by remember { mutableStateOf(1.dp) }
     Scaffold(containerColor = MaterialTheme.colorScheme.surface) { padding ->
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(padding)) {
             Text("Members (admin/kick)")
-            //groupUiState.selectedGroup?.users
-            Text("Invitate")
+            LazyColumn(Modifier.padding(vertical = 10.dp).fillMaxSize()) {
+                items(groupUiState.selectedGroup!!.users) { user ->
+                    OutlinedCard {
+                        Box(Modifier.width(400.dp)) {
+                            Row(
+                                Modifier.padding(10.dp).fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                AsyncImage(
+                model = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=256&q=80",
+                modifier = Modifier.size(100.dp).clip(CircleShape), contentScale = ContentScale.Crop, contentDescription = "User image"
+                                )
+                                Spacer(Modifier.width(10.dp))
+                                Column {
+                                    Text(user.name, style = MaterialTheme.typography.titleLarge)
+                                    Text(user.email, style = MaterialTheme.typography.titleSmall)
+                                }
+                                Spacer(Modifier.width(10.dp))
+                                Column {
+                                    ExtendedFloatingActionButton(
+                                        onClick = {
+                                            groupViewModel.addGroupAdmin(user)
+                                        },
+                                        modifier = Modifier.padding(horizontal = 12.dp),
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start)) {
+                                            Icon(Lucide.Plus, null)
+                                            Text("Make admin")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Text("Invite")
             BasicTextField(
                 value = emailAddressInvite,
                 onValueChange = { emailAddressInvite = it },

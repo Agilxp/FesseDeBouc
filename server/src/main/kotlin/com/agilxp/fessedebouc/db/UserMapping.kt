@@ -34,5 +34,5 @@ data class User(
     val email: String,
     val googleId: String,
 ) {
-    fun toDto() = UserDTO(name, email, googleId)
+    fun toDto() = UserDTO(id.toString(), name, email, googleId)
 }

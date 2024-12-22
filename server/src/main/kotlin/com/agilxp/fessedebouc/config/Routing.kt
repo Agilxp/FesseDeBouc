@@ -83,63 +83,78 @@ fun Application.configureRouting(
         }
         route("/ws") {
             webSocket("/me") {
-                val token = call.request.queryParameters["at"]
-                val user = getUserFromToken(jwtVerifier, token, userRepository)
-                val events = eventRepository.findUnansweredEventsForUser(user).map { it.toDto() }
-                val invitations = joinGroupRequestRepository.findInvitationByUserEmail(user.email).map { it.toDto() }
-                val userStatus = UserStatusDTO(events, invitations, emptyList())
-                val status = StatusConnection(userStatus)
-                sendSerialized(userStatus)
-                while (true) {
-                    delay(30000)
+                try {
+                    val token = call.request.queryParameters["at"]
+                    val user = getUserFromToken(jwtVerifier, token, userRepository)
                     val events = eventRepository.findUnansweredEventsForUser(user).map { it.toDto() }
                     val invitations =
                         joinGroupRequestRepository.findInvitationByUserEmail(user.email).map { it.toDto() }
-                    val newUserStatus = UserStatusDTO(events, invitations, emptyList())
-                    if (status.hasChanges(newUserStatus)) {
-                        sendSerialized(newUserStatus)
+                    val userStatus = UserStatusDTO(events, invitations, emptyList())
+                    val status = StatusConnection(userStatus)
+                    sendSerialized(userStatus)
+                    while (true) {
+                        delay(30000)
+                        val events = eventRepository.findUnansweredEventsForUser(user).map { it.toDto() }
+                        val invitations =
+                            joinGroupRequestRepository.findInvitationByUserEmail(user.email).map { it.toDto() }
+                        val newUserStatus = UserStatusDTO(events, invitations, emptyList())
+                        if (status.hasChanges(newUserStatus)) {
+                            sendSerialized(newUserStatus)
+                        }
                     }
+                } catch (e: Exception) {
+                    log.error("Error in WebSocket status processing: ${e.message}")
+                } finally {
+                    println("Removing session")
+                    close(CloseReason(CloseReason.Codes.NORMAL, "Closing..."))
                 }
             }
             val messagingConnections = Collections.synchronizedSet<MessagingConnection>(LinkedHashSet())
             route("/messages") {
                 webSocket("/{groupId}") {
                     val token = call.request.queryParameters["at"]
-                    val user = getUserFromToken(jwtVerifier, token, userRepository)
-                    val groupId = UUID.fromString(call.parameters["groupId"])
-                    if (groupId != null) {
-                        val group = isUserInGroup(user, groupId, groupRepository)
-                        val thisConnection = MessagingConnection(this, user, group)
-                        println("Added session? " + messagingConnections.add(thisConnection))
+                    try {
+                        val groupId = UUID.fromString(call.parameters["groupId"])
+                        if (groupId != null) {
+                            val user = getUserFromToken(jwtVerifier, token, userRepository)
+                            val group = isUserInGroup(user, groupId, groupRepository)
+                            val thisConnection = MessagingConnection(this, user, group)
+                            println("Added session? " + messagingConnections.add(thisConnection))
 
-                        try {
-                            for (frame in incoming) {
-                                frame as? Frame.Text ?: continue
-                                val incomingMessage =
-                                    Json.decodeFromString(PostMessageDTO.serializer(), frame.readText())
-                                if (incomingMessage.isEmpty()) {
-                                    outgoing.send(Frame.Text("Message content cannot be empty"))
-                                } else {
-                                    messageRepository.addMessageToGroup(incomingMessage, user, group)
-                                    messagingConnections.filter { it.group == group }.forEach {
-                                        it.session.send(
-                                            Frame.Text(
-                                                Json.encodeToString(
-                                                    MessageDTO.serializer(),
-                                                    incomingMessage.toMessageDTO(user.toDto(), group.toDto())
+                            try {
+                                for (frame in incoming) {
+                                    frame as? Frame.Text ?: continue
+                                    val incomingMessage =
+                                        Json.decodeFromString(PostMessageDTO.serializer(), frame.readText())
+                                    if (incomingMessage.isEmpty()) {
+                                        outgoing.send(Frame.Text("Message content cannot be empty"))
+                                    } else {
+                                        messageRepository.addMessageToGroup(incomingMessage, user, group)
+                                        messagingConnections.filter { it.group == group }.forEach {
+                                            it.session.send(
+                                                Frame.Text(
+                                                    Json.encodeToString(
+                                                        MessageDTO.serializer(),
+                                                        incomingMessage.toMessageDTO(user.toDto(), group.toDto())
+                                                    )
                                                 )
                                             )
-                                        )
+                                        }
                                     }
                                 }
+                            } catch (e: Exception) {
+                                log.error("Error in WebSocket message processing: ${e.message}")
+                            } finally {
+                                messagingConnections.remove(thisConnection)
                             }
-                        } catch (e: Exception) {
-                            this@configureRouting.log.error("Error in WebSocket processing: ${e.message}")
-                        } finally {
-                            messagingConnections.remove(thisConnection)
+                        } else {
+                            throw BadRequestException("Group id missing")
                         }
-                    } else {
-                        throw BadRequestException("Group id missing")
+                    } catch (e: Exception) {
+                        log.error("Error in WebSocket connection: ${e.message}")
+                    } finally {
+                        println("Removing session")
+                        close(CloseReason(CloseReason.Codes.NORMAL, "Closing..."))
                     }
                 }
             }
@@ -177,6 +192,42 @@ fun Application.configureRouting(
                             call.respond(HttpStatusCode.OK)
                         } else {
                             throw AuthenticationException("User ${user.id} not admin in group.")
+                        }
+                    }
+                    route("/admin") {
+                        put("/{userId}") {
+                            val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
+                            val groupId = UUID.fromString(call.parameters["groupId"])
+                            val userId = UUID.fromString(call.parameters["userId"])
+                            if (groupId != null && userId != null && isGroupAdmin(user, groupId, groupRepository)) {
+                                val group = groupRepository.getGroupById(groupId)
+                                    ?: throw BadRequestException("Invalid group id")
+                                val newAdmin = userRepository.getUserById(userId) ?: throw BadRequestException("Invalid user id")
+                                if (group.admins.toList().contains(newAdmin)) {
+                                    // Nothing to do
+                                } else {
+                                    groupRepository.addAdminToGroup(group, newAdmin)
+                                }
+                                call.respond(HttpStatusCode.OK)
+                            } else {
+                                call.respond(HttpStatusCode.NotFound)
+                            }
+                        }
+                        delete("/{userId}") {
+                            val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
+                            val groupId = UUID.fromString(call.parameters["groupId"])
+                            val userId = UUID.fromString(call.parameters["userId"])
+                            if (groupId != null && userId != null && isGroupAdmin(user, groupId, groupRepository)) {
+                                val group = groupRepository.getGroupById(groupId)
+                                    ?: throw BadRequestException("Invalid group id")
+                                val oldAdmin = userRepository.getUserById(userId) ?: throw BadRequestException("Invalid user id")
+                                if (group.admins.toList().contains(user)) {
+                                    groupRepository.removeAdminFromGroup(group, oldAdmin)
+                                } else {
+                                    // Nothing to do
+                                }
+                                call.respond(HttpStatusCode.OK)
+                            }
                         }
                     }
                     route("/kick") {

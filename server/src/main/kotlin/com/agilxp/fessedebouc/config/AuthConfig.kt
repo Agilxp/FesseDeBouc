@@ -123,6 +123,7 @@ fun Application.configureAuth(
                             clock,
                             principal.expiresIn,
                             user.id,
+                            user.name,
                             userInfo.email,
                             userInfo.id
                         )
@@ -130,6 +131,7 @@ fun Application.configureAuth(
                             clock,
                             86400, // 24 hours
                             user.id,
+                            user.name,
                             userInfo.email,
                             userInfo.id
                         )
@@ -174,6 +176,7 @@ fun Application.configureAuth(
                         clock,
                         3600,
                         user.id,
+                        user.name,
                         user.email,
                         user.googleId
                     )

@@ -17,6 +17,7 @@ fun JWTConfig.createToken(
     clock: Clock,
     expirationSeconds: Long,
     userId: UUID,
+    userName: String,
     userEmail: String,
     googleId: String
 ): String =
@@ -25,6 +26,7 @@ fun JWTConfig.createToken(
         .withIssuer(this.issuer)
         .withClaim("google_id", googleId)
         .withClaim("user_id", userId.toString())
+        .withClaim("user_name", userName)
         .withClaim("user_email", userEmail)
         .withExpiresAt(clock.instant().plusSeconds(expirationSeconds))
         .sign(Algorithm.HMAC256(this.secret))

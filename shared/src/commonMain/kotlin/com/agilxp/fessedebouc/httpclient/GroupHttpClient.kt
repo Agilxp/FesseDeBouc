@@ -5,6 +5,7 @@ import com.agilxp.fessedebouc.UnknownServerException
 import com.agilxp.fessedebouc.getPlatform
 import com.agilxp.fessedebouc.model.GroupDTO
 import com.agilxp.fessedebouc.model.InvitationDTO
+import com.agilxp.fessedebouc.model.UserDTO
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
@@ -41,6 +42,11 @@ class GroupHttpClient {
                 contentType(ContentType.Application.Json)
                 setBody(InvitationDTO(email))
             }
+        }
+
+        @Throws(UnknownServerException::class, ConflictException::class, CancellationException::class)
+        suspend fun addAdminToGroup(groupUUID: String, user: UserDTO) {
+            getPlatform().client.delete("groups/$groupUUID/kick/${user.id!!}")
         }
     }
 }

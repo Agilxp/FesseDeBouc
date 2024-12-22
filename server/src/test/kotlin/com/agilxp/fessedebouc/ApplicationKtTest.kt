@@ -126,6 +126,7 @@ fun Application.testModule() {
 
 fun getAdminUser(): UserDTO {
     val adminUser = UserDTO(
+        adminUUID.toString(),
         "admin",
         "admin@example.com",
         "GOOGLE1"
@@ -135,6 +136,7 @@ fun getAdminUser(): UserDTO {
 
 fun getNonAdminUser(): UserDTO {
     val adminUser = UserDTO(
+        userUUID.toString(),
         "user",
         "user@example.com",
         "GOOGLE2"
@@ -147,6 +149,7 @@ fun getAdminUserToken(): String {
     val adminUserToken = jwtConfig.createToken(
         clock = Clock.systemUTC(),
         userId = adminUUID,
+        userName = "Admin",
         userEmail = admin.email,
         googleId = admin.googleId,
         expirationSeconds = 3600
@@ -159,6 +162,7 @@ fun getNonAdminUserToken(): String {
     val userToken = jwtConfig.createToken(
         clock = Clock.systemUTC(),
         userId = userUUID,
+        userName = "User",
         userEmail = user.email,
         googleId = user.googleId,
         expirationSeconds = 3600

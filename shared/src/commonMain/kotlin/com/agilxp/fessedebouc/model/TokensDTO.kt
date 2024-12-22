@@ -24,6 +24,7 @@ data class TokenData(
     val iss: String,
     val google_id: String,
     val user_id: String,
+    val user_name: String,
     val user_email: String,
     val exp: Long,
 )

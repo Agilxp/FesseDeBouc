@@ -94,7 +94,7 @@ class WasmPlatform : PlatformClass() {
                 throw IllegalStateException("No token found")
             }
             val parsedToken = Json.decodeFromString<TokenData>(window.atob(accessToken.split('.')[1]))
-            user = UserDTO(parsedToken.user_email, parsedToken.user_email, parsedToken.google_id)
+            user = UserDTO(parsedToken.user_id, parsedToken.user_name, parsedToken.user_email, parsedToken.google_id)
         }
         return user!!
     }

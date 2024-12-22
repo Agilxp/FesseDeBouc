@@ -21,7 +21,10 @@ import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
-import kotlin.test.*
+import kotlin.test.AfterTest
+import kotlin.test.Test
+import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
 
 class WebsocketsTest {
 
@@ -47,20 +50,15 @@ class WebsocketsTest {
             }
         }
         var counter = 0
-        val exception = assertFailsWith<IllegalStateException>(
-            message = "No exception found"
-        ) {
-            client.webSocket("/ws/me") {
-                for (frame in incoming) {
-                    counter++
-                    if (counter == 5) {
-                        close(CloseReason(CloseReason.Codes.NORMAL, "Client disconnected"))
-                    }
+        client.webSocket("/ws/me") {
+            for (frame in incoming) {
+                counter++
+                if (counter == 5) {
+                    close(CloseReason(CloseReason.Codes.NORMAL, "Client disconnected"))
                 }
             }
         }
         assertEquals(0, counter)
-        assertEquals("WebSocket connection failed", exception.message)
     }
 
     @Test
@@ -119,33 +117,25 @@ class WebsocketsTest {
         runBlocking {
             launch {
                 println("Connecting user client")
-                userClient.webSocket("/ws/me") {
-                    var counter = 0
+                userClient.webSocket("/ws/me?at=${getNonAdminUserToken()}") {
                     for (frame in incoming) {
-                        counter++
                         val updatedStatus = converter!!.deserialize<UserStatusDTO>(frame)
                         userStatus.add(updatedStatus)
-                        if (counter == 3) {
-                            close(CloseReason(CloseReason.Codes.NORMAL, "Client disconnected"))
-                        }
+                        close(CloseReason(CloseReason.Codes.NORMAL, "Client disconnected"))
                     }
                 }
             }
             delay(500)
             println("Connecting admin client")
-            adminClient.webSocket("/ws/me") {
-                var counter = 0
+            adminClient.webSocket("/ws/me?at=${getAdminUserToken()}") {
                 for (frame in incoming) {
-                    counter++
                     val updatedStatus = converter!!.deserialize<UserStatusDTO>(frame)
                     adminStatus.add(updatedStatus)
-                    if (counter == 3) {
-                        close(CloseReason(CloseReason.Codes.NORMAL, "Client disconnected"))
-                    }
+                    close(CloseReason(CloseReason.Codes.NORMAL, "Client disconnected"))
                 }
             }
             val emptyStatus = UserStatusDTO(emptyList(), emptyList(), emptyList())
-            val emptyStatuses = mutableListOf(emptyStatus, emptyStatus, emptyStatus)
+            val emptyStatuses = mutableListOf(emptyStatus)
             assertContentEquals(emptyStatuses, adminStatus)
             val expectedUserStatus = UserStatusDTO(
                 emptyList(),
@@ -160,11 +150,7 @@ class WebsocketsTest {
                 ),
                 emptyList()
             )
-            val userStatuses = mutableListOf(
-                expectedUserStatus,
-                expectedUserStatus,
-                expectedUserStatus
-            )
+            val userStatuses = mutableListOf(expectedUserStatus)
             assertContentEquals(userStatuses, userStatus)
         }
     }

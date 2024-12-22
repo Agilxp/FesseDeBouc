@@ -7,6 +7,7 @@ import com.agilxp.fessedebouc.httpclient.MessageHttpClient
 import com.agilxp.fessedebouc.model.GroupDTO
 import com.agilxp.fessedebouc.model.MessageDTO
 import com.agilxp.fessedebouc.model.PostMessageDTO
+import com.agilxp.fessedebouc.model.UserDTO
 import io.ktor.websocket.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,6 +46,22 @@ class GroupViewModel : ViewModel() {
                     _uiState.update { currentState ->
                         currentState.copy(errorMessage = e.message ?: "Something when creating to group")
                     }
+                }
+            }
+        }
+    }
+
+    fun addGroupAdmin(user: UserDTO) {
+        viewModelScope.launch(Dispatchers.Default) {
+            try {
+                GroupHttpClient.addAdminToGroup(_uiState.value.selectedGroup?.id!!, user)
+                val myGroups = GroupHttpClient.getMyGroups()
+                _uiState.update { currentState ->
+                    currentState.copy(myGroups = myGroups.toMutableList(), errorMessage = null)
+                }
+            } catch (e: Exception) {
+                _uiState.update { currentState ->
+                    currentState.copy(errorMessage = e.message ?: "Something when adding admin to group")
                 }
             }
         }

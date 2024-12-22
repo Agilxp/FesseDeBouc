@@ -73,6 +73,7 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(libs.androidx.lifecycle.viewmodel.compose)
+            implementation(libs.coil.multiplatform)
             implementation(libs.composetheme)
             implementation(libs.composable.core)
             implementation(libs.lucide.icons)
