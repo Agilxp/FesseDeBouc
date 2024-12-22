@@ -12,8 +12,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.agilxp.fessedebouc.ui.view.EventView
 import com.agilxp.fessedebouc.ui.view.GroupView
 import com.agilxp.fessedebouc.ui.view.InvitationView
+import com.agilxp.fessedebouc.ui.viewmodel.EventViewModel
 import com.agilxp.fessedebouc.ui.viewmodel.GroupViewModel
 import com.agilxp.fessedebouc.ui.viewmodel.UserViewModel
 import com.composables.icons.lucide.*
@@ -28,7 +30,8 @@ val navigationItems = listOf(
 @Composable
 fun App(
     groupViewModel: GroupViewModel = viewModel { GroupViewModel() },
-    userViewModel: UserViewModel = viewModel { UserViewModel() }
+    userViewModel: UserViewModel = viewModel { UserViewModel() },
+    eventViewModel: EventViewModel = viewModel { EventViewModel() }
 ) {
     colors = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()
     var navigationIndex by remember { mutableStateOf(0) }
@@ -104,9 +107,7 @@ fun App(
                                 VerticalDivider(color = colors.onPrimaryContainer)
                                 when (navigationIndex) {
                                     0 -> GroupView(smallScreen, groupViewModel)
-                                    1 -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-                                        Text("Events")
-                                    }
+                                    1 -> EventView(smallScreen, userViewModel, eventViewModel, groupViewModel)
 
                                     2 -> InvitationView(smallScreen, userViewModel)
                                     3 -> Box(Modifier.fillMaxSize(), Alignment.Center) {

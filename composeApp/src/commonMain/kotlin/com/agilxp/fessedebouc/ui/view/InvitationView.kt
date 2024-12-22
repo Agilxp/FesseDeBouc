@@ -42,7 +42,7 @@ fun InvitationView(smallScreen: Boolean, userViewModel: UserViewModel) {
                     "declined" -> Color.Red
                     else -> Color.Black
                 }
-                OutlinedCard(modifier = Modifier.fillMaxWidth().border(1.dp, color)) {
+                OutlinedCard(modifier = Modifier.fillMaxWidth().border(1.dp, color, CardDefaults.outlinedShape)) {
                     Row(verticalAlignment = CenterVertically) {
                         Column(
                             modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
