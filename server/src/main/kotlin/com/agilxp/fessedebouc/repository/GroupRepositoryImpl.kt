@@ -65,6 +65,10 @@ class GroupRepositoryImpl : GroupRepository {
         UserGroups.deleteWhere {
             (UserGroups.userId eq userId) and (UserGroups.groupId eq groupId)
         }
+        val count = UserGroups.selectAll().where { UserGroups.groupId eq groupId }.count()
+        if (count == 0L) {
+            GroupDAO.findById(groupId)?.delete()
+        }
     }
 
     override suspend fun getGroupsForUser(user: User): List<Group> = suspendTransaction {

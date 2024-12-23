@@ -2,6 +2,7 @@ package com.agilxp.fessedebouc.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.agilxp.fessedebouc.getPlatform
 import com.agilxp.fessedebouc.httpclient.GroupHttpClient
 import com.agilxp.fessedebouc.httpclient.MessageHttpClient
 import com.agilxp.fessedebouc.model.GroupDTO
@@ -54,10 +55,18 @@ class GroupViewModel : ViewModel() {
     fun addGroupAdmin(user: UserDTO) {
         viewModelScope.launch(Dispatchers.Default) {
             try {
-                GroupHttpClient.addAdminToGroup(_uiState.value.selectedGroup?.id!!, user)
+                val selectedGroup = _uiState.value.selectedGroup!!
+                GroupHttpClient.addAdminToGroup(selectedGroup.id!!, user)
+                val admins = selectedGroup.admins.toMutableList()
+                admins.add(user)
+                val updatedGroup = selectedGroup.copy(admins = admins)
                 val myGroups = GroupHttpClient.getMyGroups()
                 _uiState.update { currentState ->
-                    currentState.copy(myGroups = myGroups.toMutableList(), errorMessage = null)
+                    currentState.copy(
+                        selectedGroup = updatedGroup,
+                        myGroups = myGroups.toMutableList(),
+                        errorMessage = null
+                    )
                 }
             } catch (e: Exception) {
                 _uiState.update { currentState ->
@@ -70,14 +79,68 @@ class GroupViewModel : ViewModel() {
     fun removeGroupAdmin(user: UserDTO) {
         viewModelScope.launch(Dispatchers.Default) {
             try {
-                GroupHttpClient.removeAdminFromGroup(_uiState.value.selectedGroup?.id!!, user)
+                val selectedGroup = _uiState.value.selectedGroup!!
+                GroupHttpClient.removeAdminFromGroup(selectedGroup.id!!, user)
+                val admins = selectedGroup.admins.toMutableList()
+                admins.remove(user)
+                val updatedGroup = selectedGroup.copy(admins = admins)
                 val myGroups = GroupHttpClient.getMyGroups()
                 _uiState.update { currentState ->
-                    currentState.copy(myGroups = myGroups.toMutableList(), errorMessage = null)
+                    currentState.copy(
+                        selectedGroup = updatedGroup,
+                        myGroups = myGroups.toMutableList(),
+                        errorMessage = null
+                    )
                 }
             } catch (e: Exception) {
                 _uiState.update { currentState ->
                     currentState.copy(errorMessage = e.message ?: "Something when adding admin to group")
+                }
+            }
+        }
+    }
+
+    fun kickUser(user: UserDTO) {
+        viewModelScope.launch(Dispatchers.Default) {
+            try {
+                val selectedGroup = _uiState.value.selectedGroup!!
+                GroupHttpClient.kickUserFromGroup(selectedGroup.id!!, user)
+                val myGroups = GroupHttpClient.getMyGroups()
+                _uiState.update { currentState ->
+                    val users = selectedGroup.users.toMutableList()
+                    users.remove(user)
+                    val updatedGroup = selectedGroup.copy(users = users)
+                    currentState.copy(
+                        selectedGroup = updatedGroup,
+                        errorMessage = null,
+                        myGroups = myGroups.toMutableList()
+                    )
+                }
+            } catch (_: Exception) {
+                _uiState.update { currentState ->
+                    currentState.copy(errorMessage = "Error removing user from group")
+                }
+            }
+        }
+    }
+
+    fun leaveGroup() {
+        viewModelScope.launch(Dispatchers.Default) {
+            try {
+                val selectedGroup = _uiState.value.selectedGroup!!
+                val user = getPlatform().getUser()
+                GroupHttpClient.kickUserFromGroup(selectedGroup.id!!, user)
+                val myGroups = GroupHttpClient.getMyGroups()
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        selectedGroup = null,
+                        errorMessage = null,
+                        myGroups = myGroups.toMutableList()
+                    )
+                }
+            } catch (_: Exception) {
+                _uiState.update { currentState ->
+                    currentState.copy(errorMessage = "Error removing user from group")
                 }
             }
         }

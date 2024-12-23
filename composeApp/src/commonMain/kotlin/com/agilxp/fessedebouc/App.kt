@@ -7,7 +7,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -15,6 +14,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.agilxp.fessedebouc.ui.view.EventView
 import com.agilxp.fessedebouc.ui.view.GroupView
 import com.agilxp.fessedebouc.ui.view.InvitationView
+import com.agilxp.fessedebouc.ui.view.ProfileView
 import com.agilxp.fessedebouc.ui.viewmodel.EventViewModel
 import com.agilxp.fessedebouc.ui.viewmodel.GroupViewModel
 import com.agilxp.fessedebouc.ui.viewmodel.UserViewModel
@@ -65,14 +65,9 @@ fun App(
                     Box(Modifier.padding(contentPadding).fillMaxSize()) {
                         when (navigationIndex) {
                             0 -> GroupView(smallScreen, groupViewModel)
-                            1 -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-                                Text("Events")
-                            }
-
+                            1 -> EventView(smallScreen, userViewModel, eventViewModel, groupViewModel)
                             2 -> InvitationView(smallScreen, userViewModel)
-                            3 -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-                                Text("Profile")
-                            }
+                            3 -> ProfileView()
                         }
                     }
                 }
@@ -108,11 +103,8 @@ fun App(
                                 when (navigationIndex) {
                                     0 -> GroupView(smallScreen, groupViewModel)
                                     1 -> EventView(smallScreen, userViewModel, eventViewModel, groupViewModel)
-
                                     2 -> InvitationView(smallScreen, userViewModel)
-                                    3 -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-                                        Text("Profile")
-                                    }
+                                    3 -> ProfileView()
                                 }
                             }
                         }

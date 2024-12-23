@@ -33,12 +33,12 @@ import com.agilxp.fessedebouc.colors
 import com.agilxp.fessedebouc.ui.viewmodel.GroupViewModel
 import com.agilxp.fessedebouc.util.isValidEmail
 import com.composables.icons.lucide.Lucide
-import com.composables.icons.lucide.ShieldMinus
-import com.composables.icons.lucide.ShieldPlus
+import com.composables.icons.lucide.UserRoundMinus
 
 @Composable
 fun GroupAdmin(
-    groupViewModel: GroupViewModel
+    groupViewModel: GroupViewModel,
+    smallScreen: Boolean
 ) {
     val groupUiState by groupViewModel.uiState.collectAsState()
     var emailAddressInvite by remember { mutableStateOf("") }
@@ -48,13 +48,15 @@ fun GroupAdmin(
     Scaffold(containerColor = MaterialTheme.colorScheme.surface) { padding ->
         Column(modifier = Modifier.padding(padding)) {
             Column(Modifier.fillMaxWidth().height(500.dp)) {
-                Text("Members")
+                Box(Modifier.fillMaxSize(), Alignment.Center) {
+                    Text("Members", style = MaterialTheme.typography.titleLarge)
+                }
                 LazyColumn(Modifier.padding(vertical = 10.dp).fillMaxSize()) {
                     items(selectedGroup.users) { user ->
-                        OutlinedCard {
+                        OutlinedCard(Modifier.padding(horizontal = 10.dp)) {
                             Column(Modifier.fillMaxWidth().padding(horizontal = 10.dp)) {
                                 Row(
-                                    Modifier.padding(10.dp).fillMaxWidth(),
+                                    Modifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     AsyncImage(
@@ -69,44 +71,21 @@ fun GroupAdmin(
                                         Text(user.email, style = MaterialTheme.typography.titleSmall)
                                     }
                                     Spacer(Modifier.width(10.dp))
-                                    if (selectedGroup.admins.contains(user)) {
-                                        ExtendedFloatingActionButton(
-                                            onClick = {
-                                                groupViewModel.removeGroupAdmin(user)
-                                            },
-                                            modifier = Modifier.padding(horizontal = 12.dp),
-                                        ) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start)
-                                            ) {
-                                                Icon(Lucide.ShieldMinus, null)
-                                                Text("Remove admin")
-                                            }
-                                        }
-                                    } else {
-                                        ExtendedFloatingActionButton(
-                                            onClick = {
-                                                groupViewModel.addGroupAdmin(user)
-                                            },
-                                            modifier = Modifier.padding(horizontal = 12.dp),
-                                        ) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start)
-                                            ) {
-                                                Icon(Lucide.ShieldPlus, null)
-                                                Text("Make admin")
-                                            }
-                                        }
+                                    if (!smallScreen) {
+                                        GroupAdminActionButtons(groupViewModel, user)
                                     }
+                                }
+                                if (smallScreen) {
+                                    GroupAdminActionButtons(groupViewModel, user)
                                 }
                             }
                         }
                     }
                 }
             }
-            Text("Invite")
+            Box(Modifier.fillMaxSize(), Alignment.Center) {
+                Text("Invite", style = MaterialTheme.typography.titleLarge)
+            }
             BasicTextField(
                 value = emailAddressInvite,
                 onValueChange = { emailAddressInvite = it },
@@ -179,8 +158,20 @@ fun GroupAdmin(
                     style = TextStyle(color = Color.Black, fontSize = 14.sp, fontWeight = FontWeight(600))
                 )
             }
-            Text("Requests")
-            Text("Leave")
+            ExtendedFloatingActionButton(
+                onClick = {
+                    groupViewModel.leaveGroup()
+                },
+                modifier = Modifier.padding(vertical = 4.dp),
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start)
+                ) {
+                    Icon(Lucide.UserRoundMinus, null)
+                    Text("Leave group")
+                }
+            }
         }
     }
 }

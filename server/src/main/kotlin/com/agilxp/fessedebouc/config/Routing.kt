@@ -235,7 +235,7 @@ fun Application.configureRouting(
                             val user = getInfoFromPrincipal(call, jwtConfig, userRepository)
                             val groupId = UUID.fromString(call.parameters["groupId"])
                             val userId = UUID.fromString(call.parameters["userId"])
-                            if (groupId != null && userId != null && isGroupAdmin(user, groupId, groupRepository)) {
+                            if (groupId != null && userId != null && (isGroupAdmin(user, groupId, groupRepository) || user.id == userId)) {
                                 groupRepository.removeUserFromGroup(groupId, userId)
                                 call.respond(HttpStatusCode.OK)
                             } else {
