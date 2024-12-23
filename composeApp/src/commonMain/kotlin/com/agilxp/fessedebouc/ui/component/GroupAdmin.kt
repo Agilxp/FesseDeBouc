@@ -33,6 +33,7 @@ import com.agilxp.fessedebouc.colors
 import com.agilxp.fessedebouc.ui.viewmodel.GroupViewModel
 import com.agilxp.fessedebouc.util.isValidEmail
 import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.ShieldMinus
 import com.composables.icons.lucide.ShieldPlus
 
 @Composable
@@ -43,12 +44,13 @@ fun GroupAdmin(
     var emailAddressInvite by remember { mutableStateOf("") }
     var emailError by remember { mutableStateOf(false) }
     var borderDp by remember { mutableStateOf(1.dp) }
+    val selectedGroup = groupUiState.selectedGroup!!
     Scaffold(containerColor = MaterialTheme.colorScheme.surface) { padding ->
         Column(modifier = Modifier.padding(padding)) {
             Column(Modifier.fillMaxWidth().height(500.dp)) {
                 Text("Members")
                 LazyColumn(Modifier.padding(vertical = 10.dp).fillMaxSize()) {
-                    items(groupUiState.selectedGroup!!.users) { user ->
+                    items(selectedGroup.users) { user ->
                         OutlinedCard {
                             Column(Modifier.fillMaxWidth().padding(horizontal = 10.dp)) {
                                 Row(
@@ -67,18 +69,35 @@ fun GroupAdmin(
                                         Text(user.email, style = MaterialTheme.typography.titleSmall)
                                     }
                                     Spacer(Modifier.width(10.dp))
-                                    ExtendedFloatingActionButton(
-                                        onClick = {
-                                            groupViewModel.addGroupAdmin(user)
-                                        },
-                                        modifier = Modifier.padding(horizontal = 12.dp),
-                                    ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start)
+                                    if (selectedGroup.admins.contains(user)) {
+                                        ExtendedFloatingActionButton(
+                                            onClick = {
+                                                groupViewModel.removeGroupAdmin(user)
+                                            },
+                                            modifier = Modifier.padding(horizontal = 12.dp),
                                         ) {
-                                            Icon(Lucide.ShieldPlus, null)
-                                            Text("Make admin")
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start)
+                                            ) {
+                                                Icon(Lucide.ShieldMinus, null)
+                                                Text("Remove admin")
+                                            }
+                                        }
+                                    } else {
+                                        ExtendedFloatingActionButton(
+                                            onClick = {
+                                                groupViewModel.addGroupAdmin(user)
+                                            },
+                                            modifier = Modifier.padding(horizontal = 12.dp),
+                                        ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start)
+                                            ) {
+                                                Icon(Lucide.ShieldPlus, null)
+                                                Text("Make admin")
+                                            }
                                         }
                                     }
                                 }

@@ -50,6 +50,13 @@ class GroupHttpClient {
         }
 
         @Throws(UnknownServerException::class, ConflictException::class, CancellationException::class)
+        suspend fun removeAdminFromGroup(groupUUID: String, user: UserDTO) {
+            getPlatform().client.delete("groups/$groupUUID/admin/${user.id!!}")
+        }
+
+
+
+        @Throws(UnknownServerException::class, ConflictException::class, CancellationException::class)
         suspend fun kickUserFromGroup(groupUUID: String, user: UserDTO) {
             getPlatform().client.delete("groups/$groupUUID/kick/${user.id!!}")
         }

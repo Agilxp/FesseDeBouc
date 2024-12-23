@@ -44,8 +44,8 @@ abstract class PlatformClass() : Platform {
     private val path = "/api/"
 
     protected val baseUrl = "$scheme://$hostname:$port$path"
-//    protected val wasmUrl = "$scheme://$hostname:$port"
-    protected val wasmUrl = "http://localhost:3000"
+    protected val wasmUrl = "$scheme://$hostname:$port"
+//    protected val wasmUrl = "http://localhost:3000"
 }
 
 expect fun getPlatform(): Platform

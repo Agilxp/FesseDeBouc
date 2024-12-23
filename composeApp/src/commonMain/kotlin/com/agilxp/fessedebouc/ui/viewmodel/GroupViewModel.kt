@@ -67,6 +67,22 @@ class GroupViewModel : ViewModel() {
         }
     }
 
+    fun removeGroupAdmin(user: UserDTO) {
+        viewModelScope.launch(Dispatchers.Default) {
+            try {
+                GroupHttpClient.removeAdminFromGroup(_uiState.value.selectedGroup?.id!!, user)
+                val myGroups = GroupHttpClient.getMyGroups()
+                _uiState.update { currentState ->
+                    currentState.copy(myGroups = myGroups.toMutableList(), errorMessage = null)
+                }
+            } catch (e: Exception) {
+                _uiState.update { currentState ->
+                    currentState.copy(errorMessage = e.message ?: "Something when adding admin to group")
+                }
+            }
+        }
+    }
+
     fun sendInvitation(email: String) {
         viewModelScope.launch(Dispatchers.Default) {
             try {

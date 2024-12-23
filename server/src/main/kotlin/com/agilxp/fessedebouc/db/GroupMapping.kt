@@ -68,5 +68,5 @@ data class Group(
     val users: List<User>,
     val admins: List<User>
 ) {
-    fun toDto() = GroupDTO(name, description, id.toString(), users.map { it.toDto() })
+    fun toDto() = GroupDTO(name, description, id.toString(), users.map { it.toDto() }, admins.map { it.toDto() })
 }
