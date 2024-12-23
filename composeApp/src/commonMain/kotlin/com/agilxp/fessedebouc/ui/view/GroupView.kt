@@ -59,7 +59,9 @@ fun GroupView(smallScreen: Boolean, groupViewModel: GroupViewModel) {
     val focusManager = LocalFocusManager.current
     if (smallScreen) {
         Scaffold(topBar = {
-            TopGroupBar(groupViewModel, state)
+            if (groupUiState.selectedGroup != null) {
+                TopGroupBar(groupViewModel, state)
+            }
         }, bottomBar = {
             NavigationBar {
                 groupUiState.myGroups.forEachIndexed { index, map ->
