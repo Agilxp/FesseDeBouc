@@ -1,7 +1,9 @@
 package com.agilxp.fessedebouc.config
 
 import com.agilxp.fessedebouc.SimpleMessageDTO
+import com.agilxp.fessedebouc.db.Token
 import com.agilxp.fessedebouc.model.*
+import com.agilxp.fessedebouc.repository.TokenRepository
 import com.agilxp.fessedebouc.repository.UserRepository
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -36,8 +38,8 @@ val applicationHttpClient = HttpClient(CIO) {
     }
 }
 
-private val tokens = mutableMapOf<String, String>()
-private val exchange = mutableMapOf<String, AuthResponse>()
+//private val tokens = mutableMapOf<String, String>()
+//private val exchange = mutableMapOf<String, AuthResponse>()
 
 fun Application.configureAuth(
     httpClient: HttpClient = applicationHttpClient,
@@ -45,6 +47,7 @@ fun Application.configureAuth(
     jwtConfig: JWTConfig,
     oauthConfig: OAuthConfig,
     userRepository: UserRepository,
+    tokenRepository: TokenRepository,
 ) {
     val jwtVerifier = JWT
         .require(Algorithm.HMAC256(jwtConfig.secret))
@@ -135,15 +138,15 @@ fun Application.configureAuth(
                             userInfo.email,
                             userInfo.id
                         )
-                        tokens[refreshToken] = user.id.toString()
-                        val code = UUID.randomUUID().toString()
-                        exchange[code] = AuthResponse(accessToken, refreshToken)
+                        val code = UUID.randomUUID()
+                        val token = Token(user.id, accessToken, refreshToken, code)
+                        tokenRepository.saveToken(token)
                         redirects[state]?.let { redirect ->
                             var redirectUrl = redirect
-                            if (redirect.contains("?")) {
-                                redirectUrl += "&code=$code"
+                            redirectUrl += if (redirect.contains("?")) {
+                                "&code=$code"
                             } else {
-                                redirectUrl += "?code=$code"
+                                "?code=$code"
                             }
                             call.respondRedirect(redirectUrl)
                             return@get
@@ -158,16 +161,20 @@ fun Application.configureAuth(
         }
         route("/oauth") {
             get("/exchange") {
-                val code = call.request.queryParameters["code"]
-                val token: AuthResponse = exchange.remove(code) ?: throw BadRequestException("Bad exchange")
-                call.respond(HttpStatusCode.OK, token)
+                val code: String = call.request.queryParameters["code"] ?: throw BadRequestException("Bad exchange")
+                val token: Token = tokenRepository.getTokenByCode(UUID.fromString(code)) ?: throw BadRequestException("Bad exchange")
+                val updatedToken = token.copy(code = null)
+                tokenRepository.saveToken(updatedToken)
+                val authResponse = AuthResponse(token.accessToken, token.refreshToken)
+                call.respond(HttpStatusCode.OK, authResponse)
             }
             post("/refresh") {
                 val request = call.receive<RefreshTokenRequest>()
                 val refreshToken = request.refreshToken
                 val decodedJWT = jwtVerifier.verify(refreshToken)
                 if (decodedJWT.audience.contains(jwtConfig.audience)) {
-                    val userId = tokens[refreshToken] ?: throw AuthenticationException("Bad refresh token")
+                    val token = tokenRepository.getTokenByRefreshToken(refreshToken) ?: throw AuthenticationException("Bad refresh token")
+                    val userId = token.userId.toString()
                     if (decodedJWT.claims["user_id"]?.asString() != userId) {
                         throw AuthenticationException("Bad refresh token")
                     }

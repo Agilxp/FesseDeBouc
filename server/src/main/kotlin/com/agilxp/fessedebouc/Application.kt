@@ -34,11 +34,13 @@ fun Application.module() {
     val messageRepository = MessageRepositoryImpl()
     val eventRepository = EventRepositoryImpl()
     val joinGroupRequestRepository = JoinGroupRequestRepositoryImpl()
+    val tokenRepository = TokenRepositoryImpl()
     configureAuth(
         clock = Clock.systemUTC(),
         jwtConfig = jwtConfig,
         oauthConfig = oauthConfig,
-        userRepository = userRepository
+        userRepository = userRepository,
+        tokenRepository = tokenRepository,
     )
     configureDatabases(dbConfig)
     configureRouting(

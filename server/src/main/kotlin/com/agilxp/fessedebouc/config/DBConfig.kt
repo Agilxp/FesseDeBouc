@@ -2,10 +2,9 @@ package com.agilxp.fessedebouc.config
 
 import com.agilxp.fessedebouc.db.*
 import com.agilxp.fessedebouc.model.DBConfigProperties
-import io.ktor.server.application.Application
+import io.ktor.server.application.*
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.DatabaseConfig
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.Transaction
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -26,6 +25,7 @@ fun Application.configureDatabases(dbConfig: DBConfigProperties) {
         SchemaUtils.createMissingTablesAndColumns(Events)
         SchemaUtils.createMissingTablesAndColumns(EventParticipants)
         SchemaUtils.createMissingTablesAndColumns(JoinGroupRequests)
+        SchemaUtils.createMissingTablesAndColumns(Tokens)
     }
 }
 
