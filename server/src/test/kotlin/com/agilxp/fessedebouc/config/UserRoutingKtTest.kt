@@ -11,7 +11,7 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
-import io.ktor.server.config.ApplicationConfig
+import io.ktor.server.config.*
 import io.ktor.server.testing.*
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.insert
@@ -87,7 +87,7 @@ class UserRoutingKtTest {
         val response = client.get("/users/$groupUUID") {
             contentType(ContentType.Application.Json)
         }
-        assertEquals(HttpStatusCode.Unauthorized, response.status)
+        assertEquals(HttpStatusCode.Forbidden, response.status)
     }
 
     @Test

@@ -14,7 +14,7 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
-import io.ktor.server.config.ApplicationConfig
+import io.ktor.server.config.*
 import io.ktor.server.testing.*
 import io.mockk.confirmVerified
 import io.mockk.every
@@ -43,7 +43,7 @@ class EventRoutingKtTest {
     }
 
     @Test
-    fun test401() = testApplication {
+    fun test403() = testApplication {
         environment {
             config = ApplicationConfig("application.conf")
         }
@@ -68,11 +68,11 @@ class EventRoutingKtTest {
         var response = client.get("/events/group/$groupUUID") {
             contentType(ContentType.Application.Json)
         }
-        assertEquals(HttpStatusCode.Unauthorized, response.status)
+        assertEquals(HttpStatusCode.Forbidden, response.status)
         response = client.post("/events/group/$groupUUID") {
             contentType(ContentType.Application.Json)
         }
-        assertEquals(HttpStatusCode.Unauthorized, response.status)
+        assertEquals(HttpStatusCode.Forbidden, response.status)
     }
 
 

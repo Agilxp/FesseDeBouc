@@ -52,6 +52,9 @@ fun Application.configureRouting(
         exception<AuthenticationException> { call, cause ->
             call.respond(HttpStatusCode.Unauthorized, SimpleMessageDTO(cause.message))
         }
+        exception<AuthorizationException> { call, cause ->
+            call.respond(HttpStatusCode.Forbidden, SimpleMessageDTO(cause.message))
+        }
         exception<BadRequestException> { call, cause ->
             call.respond(HttpStatusCode.BadRequest, SimpleMessageDTO(cause.message))
         }
@@ -191,7 +194,7 @@ fun Application.configureRouting(
                             groupRepository.updateGroup(groupId, groupToUpdate)
                             call.respond(HttpStatusCode.OK)
                         } else {
-                            throw AuthenticationException("User ${user.id} not admin in group.")
+                            throw AuthorizationException("User ${user.id} not admin in group.")
                         }
                     }
                     route("/admin") {
@@ -239,7 +242,7 @@ fun Application.configureRouting(
                                 groupRepository.removeUserFromGroup(groupId, userId)
                                 call.respond(HttpStatusCode.OK)
                             } else {
-                                throw AuthenticationException("User ${user.id} not admin in group.")
+                                throw AuthorizationException("User ${user.id} not admin in group.")
                             }
                         }
                     }
@@ -302,7 +305,7 @@ fun Application.configureRouting(
                                 )
                                 call.respond(HttpStatusCode.OK)
                             } else {
-                                throw AuthenticationException("User ${user.id} not admin in group.")
+                                throw AuthorizationException("User ${user.id} not admin in group.")
                             }
                         }
 
@@ -358,7 +361,7 @@ fun Application.configureRouting(
                                                 )
                                             }
                                         } else {
-                                            throw AuthenticationException("User email not matching invitation email")
+                                            throw AuthorizationException("User email not matching invitation email")
                                         }
                                     } else {
                                         throw BadRequestException("Not a valid invitation to accept")
@@ -517,7 +520,7 @@ suspend fun isUserInGroup(user: User, groupId: UUID, groupRepository: GroupRepos
     if (group.users.contains(user)) {
         return group
     } else {
-        throw AuthenticationException("User not in group")
+        throw AuthorizationException("User not in group")
     }
 }
 
@@ -526,7 +529,7 @@ suspend fun isGroupAdmin(user: User, groupId: UUID, groupRepository: GroupReposi
     if (group.admins.contains(user)) {
         return true
     } else {
-        throw AuthenticationException("User not admin in group")
+        throw AuthorizationException("User not admin in group")
     }
 }
 
@@ -564,6 +567,8 @@ suspend fun validatePrincipal(principal: JWTPrincipal?, userRepository: UserRepo
 }
 
 data class AuthenticationException(override val message: String) : Exception()
+
+data class AuthorizationException(override val message: String) : Exception()
 
 data class BadRequestException(override val message: String) : Exception()
 

@@ -4,8 +4,6 @@ import kotlinx.serialization.Serializable
 
 class BadRequestException(override val message: String): Exception()
 
-class ConflictException(override val message: String): Exception()
-
 class UnknownServerException(override val message: String): Exception()
 
 @Serializable

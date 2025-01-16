@@ -142,9 +142,9 @@ class WebsocketsTest {
                 listOf(
                     JoinGroupRequestDTO(
                         invitationUUID.toString(), existingGroup.copy(
-                            id = groupUUID.toString(), users = listOf(
-                                getAdminUser()
-                            )
+                            id = groupUUID.toString(),
+                            users = listOf(getAdminUser()),
+                            admins = listOf(getAdminUser())
                         ), "PENDING"
                     )
                 ),

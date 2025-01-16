@@ -47,14 +47,14 @@ fun GroupAdmin(
     val selectedGroup = groupUiState.selectedGroup!!
     Scaffold(containerColor = MaterialTheme.colorScheme.surface) { padding ->
         Column(modifier = Modifier.padding(padding)) {
-            Column(Modifier.fillMaxWidth().height(500.dp)) {
-                Box(Modifier.fillMaxSize(), Alignment.Center) {
+            Column(Modifier.fillMaxWidth().heightIn(0.dp, 500.dp).border(1.dp, Color.Red)) {
+                Box(Modifier.fillMaxWidth(), Alignment.Center) {
                     Text("Members", style = MaterialTheme.typography.titleLarge)
                 }
-                LazyColumn(Modifier.padding(vertical = 10.dp).fillMaxSize()) {
+                LazyColumn(Modifier.padding(vertical = 10.dp).fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
                     items(selectedGroup.users) { user ->
-                        OutlinedCard(Modifier.padding(horizontal = 10.dp)) {
-                            Column(Modifier.fillMaxWidth().padding(horizontal = 10.dp)) {
+                        OutlinedCard(Modifier.padding(horizontal = 10.dp, vertical = 10.dp).widthIn(0.dp, 800.dp)) {
+                            Column(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 4.dp)) {
                                 Row(
                                     Modifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically
@@ -83,7 +83,7 @@ fun GroupAdmin(
                     }
                 }
             }
-            Box(Modifier.fillMaxSize(), Alignment.Center) {
+            Box(Modifier.fillMaxWidth(), Alignment.Center) {
                 Text("Invite", style = MaterialTheme.typography.titleLarge)
             }
             BasicTextField(

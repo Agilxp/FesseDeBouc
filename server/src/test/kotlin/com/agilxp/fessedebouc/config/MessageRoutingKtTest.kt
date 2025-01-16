@@ -136,7 +136,7 @@ class MessageRoutingKtTest {
         val response = client.get("/messages/$groupUUID") {
             contentType(ContentType.Application.Json)
         }
-        assertEquals(HttpStatusCode.Unauthorized, response.status)
+        assertEquals(HttpStatusCode.Forbidden, response.status)
     }
 
     @Test

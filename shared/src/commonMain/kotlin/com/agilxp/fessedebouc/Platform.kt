@@ -3,9 +3,9 @@ package com.agilxp.fessedebouc
 import com.agilxp.fessedebouc.model.UserDTO
 import io.ktor.client.*
 import io.ktor.client.call.*
+import io.ktor.client.plugins.*
 import io.ktor.client.plugins.api.*
 import io.ktor.client.plugins.auth.providers.*
-import io.ktor.http.*
 import kotlinx.serialization.json.Json
 
 interface Platform {
@@ -21,17 +21,18 @@ abstract class PlatformClass() : Platform {
     protected val CustomerResponseHandlerPlugin = createClientPlugin("CustomerResponseHandlerPlugin") {
         onResponse { response ->
             // Interceptor that throws exception when we get an HTTP error
-            when (response.status) {
+            when (response.status.value) {
                 // DO NOT INTERCEPT 401 OR THE REFRESHING OF TOKENS WILL FAIL
-                HttpStatusCode.BadRequest -> throw BadRequestException(
+                400 -> throw BadRequestException(
                     Json.decodeFromString<SimpleMessageDTO>(response.body()).message ?: "Bad Request"
                 )
 
-                HttpStatusCode.Conflict -> throw ConflictException(
-                    Json.decodeFromString<SimpleMessageDTO>(response.body()).message ?: "Conflict"
+                in 403..429 -> throw ClientRequestException(
+                    response,
+                    Json.decodeFromString<SimpleMessageDTO>(response.body()).message ?: "Forbidden"
                 )
 
-                HttpStatusCode.InternalServerError -> throw UnknownServerException(
+                in 500..507 -> throw UnknownServerException(
                     Json.decodeFromString<SimpleMessageDTO>(response.body()).message ?: "Internal Server Error"
                 )
             }

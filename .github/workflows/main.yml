@@ -26,7 +26,7 @@ jobs:
           java-version: '21'
           cache: 'gradle'
       - name: build server
-        run: ./gradlew :server:installDist --no-daemon
+        run: ./gradlew :server:clean :server:test :server:installDist --no-daemon
       - name: build wasm
         run: ./gradlew :composeApp:wasmJsBrowserDistribution --no-daemon
       - name: setup SSH

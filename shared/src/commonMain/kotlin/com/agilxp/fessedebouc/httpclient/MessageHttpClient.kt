@@ -1,6 +1,5 @@
 package com.agilxp.fessedebouc.httpclient
 
-import com.agilxp.fessedebouc.ConflictException
 import com.agilxp.fessedebouc.UnknownServerException
 import com.agilxp.fessedebouc.getPlatform
 import com.agilxp.fessedebouc.model.GroupDTO
@@ -24,7 +23,7 @@ class MessageHttpClient {
             return response.body<List<MessageDTO>>()
         }
 
-        @Throws(UnknownServerException::class, ConflictException::class, CancellationException::class)
+        @Throws(UnknownServerException::class, CancellationException::class)
         suspend fun postMessageToGroup(message: PostMessageDTO, session: DefaultWebSocketSession) {
             if (message.isEmpty()) {
                 return
