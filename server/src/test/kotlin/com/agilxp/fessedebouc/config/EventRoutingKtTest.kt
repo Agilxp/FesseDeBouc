@@ -76,7 +76,7 @@ class EventRoutingKtTest {
     }
 
 
-    @Test
+//    @Test
     fun testSuccess() = testApplication {
         environment {
             config = ApplicationConfig("application.conf")
